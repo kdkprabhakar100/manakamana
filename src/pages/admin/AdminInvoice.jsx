@@ -52,6 +52,7 @@ export default function AdminInvoice() {
     phone: "+977-01-XXXXXXX",
     email: "info@manakamana.com.np",
     gstin: "XXXXXXXXXXXXXXXXX",
+    billNo: "",
   };
   const EMPTY_CLIENT = { name:"", company:"", address:"", phone:"", email:"", gstin:"" };
   const DEFAULT_NOTES = "Thank you for your business!\nAll prices are in NPR unless stated otherwise.";
@@ -200,7 +201,7 @@ export default function AdminInvoice() {
               <div className="invoice-fgrid" style={s.fGrid}>
                 {Object.entries(company).map(([k,v])=>(
                   <div key={k} style={k==="address"?{gridColumn:"1/-1"}:{}}>
-                    <label style={s.lbl}>{k.charAt(0).toUpperCase()+k.slice(1)}</label>
+                    <label style={s.lbl}>{k==="billNo"?"Bill No":k==="gstin"?"VAT/PAN":k.charAt(0).toUpperCase()+k.slice(1)}</label>
                     <input style={s.inp} value={v}
                       onChange={e=>setCompany(p=>({...p,[k]:e.target.value}))} />
                   </div>
@@ -214,6 +215,7 @@ export default function AdminInvoice() {
                 <div style={s.infoLine}>{company.address}, {company.city}</div>
                 <div style={s.infoLine}>📞 {company.phone} · ✉ {company.email}</div>
                 <div style={s.infoLine}>VAT/PAN: {company.gstin}</div>
+                {company.billNo && <div style={s.infoLine}>Bill No: {company.billNo}</div>}
                 <button style={{...s.btn,...s.btnGhost,marginTop:8}}
                   onClick={()=>setEditCompany(true)}>✏️ Edit</button>
               </div>
@@ -402,6 +404,7 @@ export default function AdminInvoice() {
                 <div style={s.docSmall}>{company.address}, {company.city}</div>
                 <div style={s.docSmall}>📞 {company.phone} · ✉ {company.email}</div>
                 {company.gstin&&<div style={s.docSmall}>VAT/PAN: {company.gstin}</div>}
+                {company.billNo&&<div style={s.docSmall}>Bill No: {company.billNo}</div>}
               </div>
               <div className="invoice-doc-type" style={{textAlign:"right"}}>
                 <div style={s.docType}>{docType.toUpperCase()}</div>

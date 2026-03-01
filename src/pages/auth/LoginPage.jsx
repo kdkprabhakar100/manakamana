@@ -10,16 +10,6 @@ export default function LoginPage() {
   const [error,    setError]    = useState("");
   const [loading,  setLoading]  = useState(false);
 
-  const handleGoogle = async () => {
-  setError("");
-  try {
-    await loginWithGoogle();
-    navigate("/admin");
-  } catch (err) {
-    setError("Google sign-in failed. Try again.");
-  }
-};
-
   const handle = async (e) => {
     e.preventDefault();
     setError("");
@@ -67,18 +57,6 @@ export default function LoginPage() {
             {loading ? "Signing in…" : "Sign In →"}
           </button>
         </form>
-        <div style={{ textAlign: "center", margin: "16px 0 8px", color: "#94a3b8", fontSize: 13 }}>
-  — or —
-</div>
-<button type="button" onClick={handleGoogle} style={{
-  width: "100%", padding: "11px", borderRadius: 10,
-  border: "1.5px solid #e2e8f0", background: "#fff",
-  fontSize: 14, fontWeight: 600, cursor: "pointer",
-  display: "flex", alignItems: "center", justifyContent: "center", gap: 10
-}}>
-  <img src="https://www.google.com/favicon.ico" width="18" height="18" alt="G" />
-  Continue with Google
-</button>
 
         <div style={s.hint}>
           🔒 Admin access only. Contact your system administrator for credentials.
