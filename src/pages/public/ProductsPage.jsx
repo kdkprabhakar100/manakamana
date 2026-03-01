@@ -29,9 +29,9 @@ export default function ProductsPage() {
         </div>
 
         {/* Filters */}
-        <div style={s.filters}>
+        <div className="products-filters" style={s.filters}>
           <input
-            style={s.search}
+            className="products-search" style={s.search}
             placeholder="🔍 Search products..."
             value={search}
             onChange={e => setSearch(e.target.value)}
@@ -50,7 +50,7 @@ export default function ProductsPage() {
         ) : filtered.length === 0 ? (
           <div style={s.empty}>No products found. Try a different search.</div>
         ) : (
-          <div style={s.grid}>
+          <div className="products-grid" style={s.grid}>
             {filtered.map(p => (
               <div key={p.id} style={s.card}>
                 <div style={s.imgWrap}>
@@ -66,7 +66,7 @@ export default function ProductsPage() {
                   <p style={s.price}>
                     {p.price ? `₹${Number(p.price).toLocaleString("en-IN")}` : "Get Latest Price"}
                   </p>
-                  <div style={s.cardActions}>
+                  <div className="product-card-actions" style={s.cardActions}>
                     <a href="tel:+977XXXXXXXX" style={s.callBtn}>📞 Call Now</a>
                     <a href="https://wa.me/977XXXXXXXXXX" target="_blank" rel="noreferrer" style={s.waBtn}>💬 WhatsApp</a>
                   </div>

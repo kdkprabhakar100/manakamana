@@ -14,10 +14,10 @@ export default function ContactPage() {
     <div style={s.page}>
       <div style={s.inner}>
         <p style={s.label}>GET IN TOUCH</p>
-        <h1 style={s.title}>Contact Us</h1>
+        <h1 className="page-title" style={s.title}>Contact Us</h1>
         <p style={s.subtitle}>Have a requirement? Send us a message or call directly.</p>
 
-        <div style={s.grid}>
+        <div className="contact-grid" style={s.grid}>
           {/* Info */}
           <div style={s.info}>
             {[

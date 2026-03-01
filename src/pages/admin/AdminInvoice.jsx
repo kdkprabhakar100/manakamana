@@ -169,7 +169,7 @@ export default function AdminInvoice() {
     <div style={s.page}>
 
       {/* Top bar */}
-      <div style={s.topBar}>
+      <div className="invoice-top-bar" style={s.topBar}>
         <div style={{display:"flex",alignItems:"center",gap:12}}>
           <button style={s.backBtn} onClick={() => navigate("/admin/invoices")}>← Back</button>
           <div>
@@ -177,7 +177,7 @@ export default function AdminInvoice() {
             <p style={s.pageSub}>#{invoiceNo}</p>
           </div>
         </div>
-        <div style={s.topActions}>
+        <div className="invoice-top-actions" style={s.topActions}>
           <select style={s.docSel} value={docType} onChange={e=>setDocType(e.target.value)}>
             {["Estimate","Invoice","Proforma Invoice","Quotation"].map(o=><option key={o}>{o}</option>)}
           </select>
@@ -189,7 +189,7 @@ export default function AdminInvoice() {
         </div>
       </div>
 
-      <div style={s.layout}>
+      <div className="invoice-layout" style={s.layout}>
 
         {/* ═══ LEFT EDITOR ═══ */}
         <div style={s.editor}>
@@ -197,7 +197,7 @@ export default function AdminInvoice() {
           {/* Company */}
           <Card title="Your Company">
             {editCompany ? (
-              <div style={s.fGrid}>
+              <div className="invoice-fgrid" style={s.fGrid}>
                 {Object.entries(company).map(([k,v])=>(
                   <div key={k} style={k==="address"?{gridColumn:"1/-1"}:{}}>
                     <label style={s.lbl}>{k.charAt(0).toUpperCase()+k.slice(1)}</label>
@@ -222,7 +222,7 @@ export default function AdminInvoice() {
 
           {/* Client */}
           <Card title="Bill To (Client)">
-            <div style={s.fGrid}>
+            <div className="invoice-fgrid" style={s.fGrid}>
               {[["name","Client Name"],["company","Company"],["phone","Phone"],["email","Email"],["address","Address"],["gstin","VAT/PAN"]].map(([k,lbl])=>(
                 <div key={k} style={k==="address"?{gridColumn:"1/-1"}:{}}>
                   <label style={s.lbl}>{lbl}</label>
@@ -235,7 +235,7 @@ export default function AdminInvoice() {
 
           {/* Doc details */}
           <Card title="Document Details">
-            <div style={s.fGrid}>
+            <div className="invoice-fgrid" style={s.fGrid}>
               <div>
                 <label style={s.lbl}>Document No.</label>
                 <input style={{...s.inp,background:"#f8fafc",color:"#94a3b8"}} value={invoiceNo} readOnly />
@@ -365,7 +365,7 @@ export default function AdminInvoice() {
 
           {/* Tax & discount */}
           <Card title="Pricing & Tax">
-            <div style={s.fGrid}>
+            <div className="invoice-fgrid" style={s.fGrid}>
               <div>
                 <label style={s.lbl}>Discount (%)</label>
                 <input type="number" min="0" max="100" style={s.inp} value={discountPct}
@@ -391,19 +391,19 @@ export default function AdminInvoice() {
         </div>
 
         {/* ═══ RIGHT PREVIEW ═══ */}
-        <div style={s.previewCol}>
+        <div className="invoice-preview" style={s.previewCol}>
           <div style={s.previewLabel}>LIVE PREVIEW</div>
 
-          <div ref={printRef} style={s.doc}>
+          <div ref={printRef} className="invoice-doc" style={s.doc}>
             {/* Header */}
-            <div style={s.docHeader}>
+            <div className="invoice-doc-header" style={s.docHeader}>
               <div>
                 <div style={s.docCompany}>{company.name}</div>
                 <div style={s.docSmall}>{company.address}, {company.city}</div>
                 <div style={s.docSmall}>📞 {company.phone} · ✉ {company.email}</div>
                 {company.gstin&&<div style={s.docSmall}>VAT/PAN: {company.gstin}</div>}
               </div>
-              <div style={{textAlign:"right"}}>
+              <div className="invoice-doc-type" style={{textAlign:"right"}}>
                 <div style={s.docType}>{docType.toUpperCase()}</div>
                 <div style={s.docSmall}><b>No:</b> {invoiceNo}</div>
                 <div style={s.docSmall}><b>Date:</b> {invoiceDate}</div>

@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 export default function Footer() {
   return (
     <footer style={s.footer}>
-      <div style={s.inner}>
+      <div className="footer-inner" style={s.inner}>
         <div style={s.col}>
           <div style={s.brand}>Manakamana Heavy Equipments Pvt. Ltd.</div>
           <p style={s.tagline}>

@@ -16,7 +16,7 @@ export default function AdminDashboard() {
       <div style={s.inner}>
 
         {/* Header */}
-        <div style={s.header}>
+        <div className="admin-header" style={s.header}>
           <div>
             <h1 style={s.title}>Admin Dashboard</h1>
             <p style={s.subtitle}>Manakamana Heavy Equipments Pvt. Ltd.</p>
@@ -25,7 +25,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Stats */}
-        <div style={s.statsGrid}>
+        <div className="admin-stats-grid" style={s.statsGrid}>
           {[
             { icon:"📦", label:"Total Products",  value: products.length, color:"#0ea5e9" },
             { icon:"🧾", label:"Total Invoices",   value: invoices.length, color:"#8b5cf6" },
@@ -54,7 +54,7 @@ export default function AdminDashboard() {
               <h2 style={s.sectionTitle}>Recent Invoices</h2>
               <Link to="/admin/invoices" style={s.viewAll}>View All →</Link>
             </div>
-            <div style={s.tableWrap}>
+            <div className="table-wrap" style={s.tableWrap}>
               <table style={s.table}>
                 <thead>
                   <tr style={s.thead}>

@@ -9,33 +9,33 @@ export default function HomePage() {
 
       {/* ── Hero ── */}
       <section style={s.hero}>
-        <div style={s.heroInner}>
+        <div className="hero-inner" style={s.heroInner}>
           <div style={s.heroLeft}>
-            <div style={s.heroBadge}>🔩 Nepal's Trusted Heavy Equipment Supplier</div>
-            <h1 style={s.heroTitle}>
+            <div className="hero-badge" style={s.heroBadge}>🔩 Nepal's Trusted Heavy Equipment Supplier</div>
+            <h1 className="hero-title" style={s.heroTitle}>
               Manakamana<br />
               <span style={s.heroAccent}>Heavy Equipments</span>
             </h1>
-            <p style={s.heroDesc}>
+            <p className="hero-desc" style={s.heroDesc}>
               Premium quality spare parts and components for excavators, bulldozers,
               cranes, and all heavy machinery. Serving Nepal's construction industry.
             </p>
-            <div style={s.heroBtns}>
+            <div className="hero-btns" style={s.heroBtns}>
               <Link to="/products" style={s.heroBtnPrimary}>Browse Products</Link>
               <Link to="/contact"  style={s.heroBtnSecondary}>Get a Quote</Link>
             </div>
           </div>
-          <div style={s.heroRight}>
+          <div className="hero-right" style={s.heroRight}>
             {[
               { icon:"⚙️",  val:"5000+", label:"Parts in Stock" },
               { icon:"🏗️", val:"200+",  label:"Happy Clients" },
               { icon:"🚚",  val:"Fast",  label:"Delivery Nepal-wide" },
               { icon:"✅",  val:"100%",  label:"Genuine Parts" },
             ].map(c => (
-              <div key={c.label} style={s.heroCard}>
+              <div key={c.label} className="hero-card" style={s.heroCard}>
                 <div style={s.heroCardIcon}>{c.icon}</div>
-                <div style={s.heroCardVal}>{c.val}</div>
-                <div style={s.heroCardLabel}>{c.label}</div>
+                <div className="hero-card-val" style={s.heroCardVal}>{c.val}</div>
+                <div className="hero-card-label" style={s.heroCardLabel}>{c.label}</div>
               </div>
             ))}
           </div>
@@ -46,7 +46,7 @@ export default function HomePage() {
       <section style={s.section}>
         <div style={s.sectionInner}>
           <p style={s.sectionLabel}>WHY CHOOSE US</p>
-          <h2 style={s.sectionTitle}>Built for Nepal's Toughest Jobs</h2>
+          <h2 className="section-title" style={s.sectionTitle}>Built for Nepal's Toughest Jobs</h2>
           <div style={s.featureGrid}>
             {[
               { icon:"🔧", title:"Genuine OEM Parts",   desc:"All parts sourced directly from certified manufacturers ensuring quality and compatibility." },
@@ -68,7 +68,7 @@ export default function HomePage() {
       <section style={{ ...s.section, background: "#f8fafc" }}>
         <div style={s.sectionInner}>
           <p style={s.sectionLabel}>OUR CATALOGUE</p>
-          <h2 style={s.sectionTitle}>Our Products</h2>
+          <h2 className="section-title" style={s.sectionTitle}>Our Products</h2>
 
           {loading ? (
             <div style={s.loadingRow}>
@@ -84,7 +84,7 @@ export default function HomePage() {
 
           ) : (
             <>
-              <div style={s.productGrid}>
+              <div className="products-grid" style={s.productGrid}>
                 {products.map(p => (
                   <div key={p.id} style={s.productCard}>
                     <div style={s.productImgWrap}>
@@ -105,7 +105,7 @@ export default function HomePage() {
                           : "Get Latest Price"
                         }
                       </p>
-                      <div style={s.productActions}>
+                      <div className="product-card-actions" style={s.productActions}>
                         <a href="tel:+977XXXXXXXX" style={s.callBtn}>📞 Call Now</a>
                         <a href="https://wa.me/977XXXXXXXXXX" target="_blank" rel="noreferrer" style={s.waBtn}>💬 WhatsApp</a>
                       </div>
@@ -125,9 +125,9 @@ export default function HomePage() {
       {/* ── CTA ── */}
       <section style={s.cta}>
         <div style={s.ctaInner}>
-          <h2 style={s.ctaTitle}>Need a custom estimate?</h2>
-          <p style={s.ctaDesc}>Contact us and our team will prepare a detailed quotation for your requirements.</p>
-          <Link to="/contact" style={s.ctaBtn}>Contact Us Now</Link>
+          <h2 className="cta-title" style={s.ctaTitle}>Need a custom estimate?</h2>
+          <p className="cta-desc" style={s.ctaDesc}>Contact us and our team will prepare a detailed quotation for your requirements.</p>
+          <Link to="/contact" className="cta-btn" style={s.ctaBtn}>Contact Us Now</Link>
         </div>
       </section>
 

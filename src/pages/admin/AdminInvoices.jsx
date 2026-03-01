@@ -25,7 +25,7 @@ export default function AdminInvoices() {
     <div style={s.page}>
       <div style={s.inner}>
 
-        <div style={s.header}>
+        <div className="admin-invoices-header" style={s.header}>
           <div>
             <h1 style={s.title}>All Invoices & Estimates</h1>
             <p style={s.sub}>{invoices.length} documents total</p>
@@ -33,7 +33,7 @@ export default function AdminInvoices() {
           <Link to="/admin/invoice/new" style={s.newBtn}>+ New Invoice</Link>
         </div>
 
-        <input style={s.search} placeholder="🔍 Search by invoice no., client, type…"
+        <input className="admin-invoices-search" style={s.search} placeholder="🔍 Search by invoice no., client, type…"
           value={search} onChange={e=>setSearch(e.target.value)} />
 
         {loading ? (
@@ -44,7 +44,7 @@ export default function AdminInvoices() {
             <p>No invoices yet. <Link to="/admin/invoice/new" style={{color:"#0ea5e9"}}>Create your first one →</Link></p>
           </div>
         ) : (
-          <div style={s.tableWrap}>
+          <div className="table-wrap" style={s.tableWrap}>
             <table style={s.table}>
               <thead><tr style={s.thead}>
                 {["Invoice No","Client","Type","Date","Items","Total",""].map(h=>(

@@ -36,7 +36,7 @@ export default function LoginPage() {
 
   return (
     <div style={s.page}>
-      <div style={s.card}>
+      <div className="login-card" style={s.card}>
         <div style={s.logoRow}>
           <div style={s.logoIcon}>M</div>
           <div>

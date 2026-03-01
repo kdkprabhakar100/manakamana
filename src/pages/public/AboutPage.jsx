@@ -5,14 +5,14 @@ export default function AboutPage() {
 
         <section style={s.hero}>
           <p style={s.label}>WHO WE ARE</p>
-          <h1 style={s.title}>About Manakamana Heavy Equipments Pvt. Ltd.</h1>
+          <h1 className="page-title" style={s.title}>About Manakamana Heavy Equipments Pvt. Ltd.</h1>
           <p style={s.subtitle}>
             A trusted name in heavy machinery parts and equipment supply across Nepal,
             committed to quality, reliability, and customer satisfaction.
           </p>
         </section>
 
-        <div style={s.grid}>
+        <div className="about-grid" style={s.grid}>
           <div style={s.textCol}>
             <h2 style={s.h2}>Our Story</h2>
             <p style={s.p}>

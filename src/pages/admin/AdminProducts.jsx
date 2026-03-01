@@ -82,14 +82,14 @@ export default function AdminProducts() {
       <div style={s.inner}>
 
         {/* ── Header ── */}
-        <div style={s.header}>
+        <div className="admin-products-header" style={s.header}>
           <div>
             <p style={s.label}>ADMIN · CATALOGUE</p>
             <h1 style={s.title}>Product Management</h1>
           </div>
-          <div style={s.headerRight}>
+          <div className="admin-header-right" style={s.headerRight}>
             <input
-              style={s.search}
+              className="admin-search" style={s.search}
               placeholder="🔍 Search products…"
               value={search}
               onChange={e => setSearch(e.target.value)}
@@ -131,7 +131,7 @@ export default function AdminProducts() {
 
         /* ── Card Grid ── */
         ) : (
-          <div style={s.grid}>
+          <div className="admin-products-grid" style={s.grid}>
             {filtered.map(product => (
               <div key={product.id} style={s.card}>
 
@@ -188,7 +188,7 @@ export default function AdminProducts() {
       {/* ══ Add / Edit Modal ══ */}
       {showModal && (
         <div style={s.overlay} onClick={() => setShowModal(false)}>
-          <div style={s.modal} onClick={e => e.stopPropagation()}>
+          <div className="modal-box" style={s.modal} onClick={e => e.stopPropagation()}>
             <h2 style={s.modalTitle}>
               {editing ? "✏️ Edit Product" : "➕ Add New Product"}
             </h2>
@@ -201,7 +201,7 @@ export default function AdminProducts() {
               onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
             />
 
-            <div style={s.twoCol}>
+            <div className="modal-two-col" style={s.twoCol}>
               <div>
                 <label style={s.fieldLabel}>Price (₹)</label>
                 <input

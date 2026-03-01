@@ -35,7 +35,7 @@ export default function Navbar() {
         </Link>
 
         {/* Desktop links */}
-        <div style={s.links}>
+        <div className="nav-links" style={s.links}>
           {LINKS.map(l => (
             <Link key={l.to} to={l.to}
               style={{ ...s.link, ...(active(l.to) ? s.linkActive : {}) }}>
@@ -54,18 +54,18 @@ export default function Navbar() {
           {user ? (
             <>
               {isAdmin && (
-                <Link to="/admin/invoice/new" style={s.ctaBtn}>
+                <Link to="/admin/invoice/new" className="nav-cta" style={s.ctaBtn}>
                   + New Invoice
                 </Link>
               )}
-              <button onClick={handleLogout} style={s.logoutBtn}>Logout</button>
+              <button onClick={handleLogout} className="nav-logout" style={s.logoutBtn}>Logout</button>
             </>
           ) : (
-            <Link to="/login" style={s.ctaBtn}>Admin Login</Link>
+            <Link to="/login" className="nav-cta" style={s.ctaBtn}>Admin Login</Link>
           )}
 
           {/* Hamburger */}
-          <button style={s.hamburger} onClick={() => setMenuOpen(v => !v)}>
+          <button className="nav-hamburger" style={s.hamburger} onClick={() => setMenuOpen(v => !v)}>
             <span style={s.bar} />
             <span style={s.bar} />
             <span style={s.bar} />
@@ -135,7 +135,7 @@ const s = {
     border: "none", cursor: "pointer",
   },
   hamburger: {
-    display: "flex", flexDirection: "column", gap: 4,
+    display: "none", flexDirection: "column", gap: 4,
     background: "none", border: "none", cursor: "pointer", padding: 4,
   },
   bar: { display: "block", width: 22, height: 2, background: "#475569", borderRadius: 2 },
