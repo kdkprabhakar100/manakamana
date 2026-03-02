@@ -282,15 +282,10 @@ export default function AdminProducts() {
                     }
                   </p>
 
-                  {/* Quantity */}
-                  <div style={{
-                    ...s.qtyTag,
-                    ...(product.quantity !== undefined && product.quantity < 5 ? s.qtyLow : {})
-                  }}>
-                    📦 Stock: <strong>{product.quantity !== undefined ? product.quantity : '—'}</strong> {product.unit || 'units'}
-                    {product.quantity !== undefined && product.quantity < 5 && (
-                      <span style={s.lowBadge}>LOW</span>
-                    )}
+                  {/* Public actions */}
+                  <div style={s.cardActions}>
+                    <button style={{ ...s.btn, ...s.btnOutline, flex: 1 }}>📞 Call Now</button>
+                    <button style={{ ...s.btn, ...s.btnWa, flex: 1 }}>💬 WhatsApp</button>
                   </div>
 
                   {/* Admin actions */}

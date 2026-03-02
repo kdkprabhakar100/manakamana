@@ -89,23 +89,12 @@ export default function ProductsPage() {
                 <div style={s.cardBody}>
                   <h3 style={s.name}>{p.name}</h3>
                   {p.description && <p style={s.desc}>{p.description}</p>}
-                  <div style={s.meta}>
-                    {p.unit && <span style={s.unitTag}>&#128230; per {p.unit}</span>}
-                    {p.quantity !== undefined && (
-                      <span style={{ ...s.stockTag, ...(p.quantity < 5 ? s.stockLow : {}) }}>
-                        {p.quantity} in stock
-                      </span>
-                    )}
-                  </div>
-                  <div style={s.priceRow}>
-                    <p style={s.price}>
-                      {p.price ? `\u20B9${Number(p.price).toLocaleString("en-IN")}` : "Get Quote"}
-                    </p>
-                  </div>
+                  <p style={s.price}>
+                    {p.price ? `₹${Number(p.price).toLocaleString("en-IN")}` : "Get Latest Price"}
+                  </p>
                   <div className="product-card-actions" style={s.cardActions}>
-                    <a href="tel:+9779851068337" style={s.callBtn} onClick={e => e.stopPropagation()}>&#128222; Call Now</a>
-                    <a href={`https://wa.me/9779851068337?text=${encodeURIComponent(`Hi, I'm interested in: ${p.name}${p.price ? ` (₹${p.price})` : ""}. Please share details.`)}`}
-                      target="_blank" rel="noreferrer" style={s.waBtn} onClick={e => e.stopPropagation()}>&#128172; WhatsApp</a>
+                    <a href="tel:+977XXXXXXXX" style={s.callBtn}>📞 Call Now</a>
+                    <a href="https://wa.me/977XXXXXXXXXX" target="_blank" rel="noreferrer" style={s.waBtn}>💬 WhatsApp</a>
                   </div>
                 </div>
               </div>
