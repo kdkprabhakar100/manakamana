@@ -145,6 +145,19 @@ export default function AdminInvoice() {
 
   /* ── Save to Firebase ── */
   const handleSave = async () => {
+    /* ── Validate required fields ── */
+    const missing = [];
+    if (!client.name.trim())    missing.push("Client Name");
+    if (!client.company.trim()) missing.push("Company");
+    if (!client.address.trim()) missing.push("Address");
+    if (!invoiceDate)           missing.push("Date");
+    if (!docType)               missing.push("Type");
+    if (items.length === 0)     missing.push("At least one product/service");
+    if (missing.length > 0) {
+      alert(`Please fill all required fields before saving:\n\n• ${missing.join('\n• ')}`);
+      return;
+    }
+
     /* ── Validate stock before saving ── */
     const stockErrors = [];
     for (const item of items) {

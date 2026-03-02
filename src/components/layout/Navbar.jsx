@@ -1,12 +1,12 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 
 const LINKS = [
-  { to: "/",         label: "Home" },
+  { to: "/", label: "Home" },
   { to: "/products", label: "Products" },
-  { to: "/about",    label: "About" },
-  { to: "/contact",  label: "Contact" },
+  { to: "/about", label: "About" },
+  { to: "/contact", label: "Contact" },
 ];
 
 export default function Navbar() {
@@ -33,12 +33,16 @@ export default function Navbar() {
 
   return (
     <nav style={{ ...s.nav, ...(scrolled ? s.navScrolled : {}) }}>
+      {/* Top accent stripe */}
+      <div style={s.topStripe} />
       <div style={s.inner}>
         <Link to="/" style={s.logo}>
-          <div style={s.logoIcon}>M</div>
+          <div style={s.logoIcon}>
+            <span style={s.logoGear}>{"\u2699\uFE0F"}</span>
+          </div>
           <div>
-            <div style={s.logoName}>Manakamana</div>
-            <div style={s.logoSub}>Heavy Equipments</div>
+            <div style={s.logoName}>MANAKAMANA</div>
+            <div style={s.logoSub}>HEAVY EQUIPMENTS</div>
           </div>
         </Link>
 
@@ -47,13 +51,13 @@ export default function Navbar() {
             <Link key={l.to} to={l.to}
               style={{ ...s.link, ...(active(l.to) ? s.linkActive : {}) }}>
               {l.label}
-              {active(l.to) && <span style={s.linkDot} />}
+              {active(l.to) && <span style={s.linkBar} />}
             </Link>
           ))}
           {isAdmin && (
             <Link to="/admin" style={{ ...s.link, ...(location.pathname.startsWith("/admin") ? s.linkActive : {}) }}>
               Admin
-              {location.pathname.startsWith("/admin") && <span style={s.linkDot} />}
+              {location.pathname.startsWith("/admin") && <span style={s.linkBar} />}
             </Link>
           )}
         </div>
@@ -110,95 +114,75 @@ export default function Navbar() {
   );
 }
 
+const PRIMARY = "#ea580c";
+const DARK = "#0f172a";
+
 const s = {
   nav: {
     position: "sticky", top: 0, zIndex: 100,
-    background: "rgba(255,255,255,0.95)",
-    backdropFilter: "blur(12px)",
-    borderBottom: "1px solid rgba(226,232,240,0.8)",
+    background: "rgba(15,23,42,0.97)",
+    backdropFilter: "blur(16px)",
     transition: "all 0.3s ease",
   },
-  navScrolled: {
-    boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
-  },
+  navScrolled: { boxShadow: "0 4px 24px rgba(0,0,0,0.3)" },
+  topStripe: { height: 3, background: "linear-gradient(90deg, #ea580c, #f97316, #fbbf24, #f97316, #ea580c)" },
   inner: {
     maxWidth: 1200, margin: "0 auto", padding: "0 24px",
-    height: 68, display: "flex", alignItems: "center",
+    height: 72, display: "flex", alignItems: "center",
     justifyContent: "space-between", gap: 16,
   },
-  logo: {
-    display: "flex", alignItems: "center", gap: 10,
-    textDecoration: "none", flexShrink: 0,
-  },
+  logo: { display: "flex", alignItems: "center", gap: 12, textDecoration: "none", flexShrink: 0 },
   logoIcon: {
-    width: 42, height: 42, borderRadius: 10,
+    width: 44, height: 44, borderRadius: 10,
     background: "linear-gradient(135deg, #ea580c, #f97316)",
-    color: "#fff", fontWeight: 900, fontSize: 20,
     display: "flex", alignItems: "center", justifyContent: "center",
-    boxShadow: "0 2px 8px rgba(249,115,22,0.35)",
+    boxShadow: "0 2px 12px rgba(249,115,22,0.4)",
   },
-  logoName: { fontSize: 16, fontWeight: 800, color: "#0f172a", lineHeight: 1.2 },
-  logoSub: { fontSize: 10, color: "#64748b", lineHeight: 1.2, fontWeight: 500 },
-  links: {
-    display: "flex", alignItems: "center", gap: 2,
-    flex: 1, justifyContent: "center",
-  },
+  logoGear: { fontSize: 22 },
+  logoName: { fontSize: 17, fontWeight: 900, color: "#fff", lineHeight: 1.2, letterSpacing: 1.5 },
+  logoSub: { fontSize: 9, color: "#f97316", lineHeight: 1.2, fontWeight: 700, letterSpacing: 2 },
+  links: { display: "flex", alignItems: "center", gap: 2, flex: 1, justifyContent: "center" },
   link: {
-    position: "relative",
-    padding: "8px 16px", borderRadius: 8, fontSize: 14, fontWeight: 500,
-    color: "#475569", textDecoration: "none",
-    transition: "all 0.2s ease",
+    position: "relative", padding: "8px 18px", borderRadius: 8, fontSize: 14, fontWeight: 500,
+    color: "#94a3b8", textDecoration: "none", transition: "all 0.2s ease",
     display: "flex", flexDirection: "column", alignItems: "center", gap: 2,
   },
-  linkActive: { color: "#ea580c", fontWeight: 700 },
-  linkDot: {
-    position: "absolute", bottom: 2,
-    width: 5, height: 5, borderRadius: "50%",
-    background: "#f97316",
+  linkActive: { color: "#f97316", fontWeight: 700 },
+  linkBar: {
+    position: "absolute", bottom: 0, left: "50%", transform: "translateX(-50%)",
+    width: 20, height: 3, borderRadius: 2,
+    background: "linear-gradient(90deg, #ea580c, #f97316)",
   },
   authArea: { display: "flex", alignItems: "center", gap: 10, flexShrink: 0 },
   ctaBtn: {
     background: "linear-gradient(135deg, #ea580c, #f97316)", color: "#fff",
-    padding: "9px 18px", borderRadius: 8, fontSize: 13, fontWeight: 700,
+    padding: "9px 20px", borderRadius: 8, fontSize: 13, fontWeight: 700,
     textDecoration: "none", border: "none", cursor: "pointer",
-    boxShadow: "0 2px 8px rgba(249,115,22,0.25)",
-    transition: "all 0.2s ease",
+    boxShadow: "0 2px 12px rgba(249,115,22,0.3)",
   },
   logoutBtn: {
-    background: "#f1f5f9", color: "#475569", padding: "9px 16px",
-    borderRadius: 8, fontSize: 13, fontWeight: 600,
-    border: "none", cursor: "pointer",
-    transition: "all 0.2s ease",
+    background: "rgba(255,255,255,0.08)", color: "#94a3b8", padding: "9px 16px",
+    borderRadius: 8, fontSize: 13, fontWeight: 600, border: "1px solid rgba(255,255,255,0.1)",
+    cursor: "pointer",
   },
   hamburger: {
     display: "none", flexDirection: "column", gap: 5,
     background: "none", border: "none", cursor: "pointer", padding: 6,
   },
-  bar: {
-    display: "block", width: 22, height: 2.5, background: "#334155", borderRadius: 2,
-    transition: "all 0.3s ease",
-  },
+  bar: { display: "block", width: 22, height: 2.5, background: "#94a3b8", borderRadius: 2, transition: "all 0.3s ease" },
   mobileMenu: {
-    background: "#fff",
-    borderTop: "1px solid #f1f5f9",
-    padding: "8px 24px 16px",
-    display: "flex", flexDirection: "column", gap: 2,
-    boxShadow: "0 12px 24px rgba(0,0,0,0.08)",
+    background: DARK, borderTop: "1px solid rgba(255,255,255,0.06)",
+    padding: "8px 24px 16px", display: "flex", flexDirection: "column", gap: 2,
+    boxShadow: "0 12px 24px rgba(0,0,0,0.3)",
   },
   mobileLink: {
-    padding: "12px 14px", borderRadius: 10, fontSize: 15, fontWeight: 500,
-    color: "#334155", textDecoration: "none",
-    transition: "background 0.15s ease",
+    padding: "13px 14px", borderRadius: 10, fontSize: 15, fontWeight: 500,
+    color: "#94a3b8", textDecoration: "none",
   },
-  mobileLinkActive: {
-    background: "#fff7ed", color: "#ea580c", fontWeight: 700,
-  },
-  mobileDivider: {
-    height: 1, background: "#f1f5f9", margin: "6px 0",
-  },
+  mobileLinkActive: { background: "rgba(249,115,22,0.1)", color: "#f97316", fontWeight: 700 },
+  mobileDivider: { height: 1, background: "rgba(255,255,255,0.06)", margin: "6px 0" },
   mobileLinkBtn: {
-    padding: "12px 14px", borderRadius: 10, fontSize: 15, fontWeight: 500,
-    color: "#ef4444", background: "none", border: "none", cursor: "pointer",
-    textAlign: "left",
+    padding: "13px 14px", borderRadius: 10, fontSize: 15, fontWeight: 500,
+    color: "#ef4444", background: "none", border: "none", cursor: "pointer", textAlign: "left",
   },
 };

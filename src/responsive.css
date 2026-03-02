@@ -1,60 +1,67 @@
-/* ═══════════════════════════════════════════════════════════
-   Manakamana — Mobile-First Responsive Overrides
-   Orange industrial theme — Inter font
-   Uses !important to override inline styles where needed
-   ═══════════════════════════════════════════════════════════ */
+﻿/* ===================================================================
+   Manakamana Heavy Equipments - Responsive Overrides
+   Industrial Theme | Inter Font | Orange + Steel palette
+   Uses !important to override inline styles
+   =================================================================== */
 
-/* ── Tablet & below (≤ 768px) ───────────────────────────── */
+/* -- Tablet & below (768px) ---------------------------------------- */
 @media (max-width: 768px) {
 
-  /* ── Navbar ── */
-  .nav-links        { display: none !important; }
-  .nav-cta          { display: none !important; }
-  .nav-logout       { display: none !important; }
-  .nav-hamburger    { display: flex !important; }
+  /* Navbar */
+  .nav-links     { display: none !important; }
+  .nav-cta       { display: none !important; }
+  .nav-logout    { display: none !important; }
+  .nav-hamburger { display: flex !important; }
 
-  /* ── Hero ── */
+  /* Hero */
   .hero-inner {
     grid-template-columns: 1fr !important;
     gap: 32px !important;
     text-align: center;
   }
-  .hero-title  { font-size: 34px !important; }
+  .hero-title  { font-size: 32px !important; }
   .hero-desc   { font-size: 15px !important; margin-left: auto; margin-right: auto; }
-  .hero-badge  { font-size: 12px !important; }
-  .hero-btns   { justify-content: center !important; }
+  .hero-badge  { font-size: 11px !important; }
+  .hero-btns   { justify-content: center !important; flex-wrap: wrap !important; }
+  .hero-trust  { justify-content: center !important; }
   .hero-right  { grid-template-columns: 1fr 1fr !important; gap: 12px !important; }
   .hero-card   { padding: 16px 12px !important; }
 
-  /* ── Section titles ── */
-  .section-title { font-size: 26px !important; }
+  /* Section titles */
+  .section-title { font-size: 24px !important; }
   .page-title    { font-size: 26px !important; }
 
-  /* ── Footer ── */
+  /* Process grid */
+  .process-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 14px !important;
+  }
+
+  /* Footer */
   .footer-inner {
-    grid-template-columns: 1fr !important;
+    grid-template-columns: 1fr 1fr !important;
     gap: 28px !important;
     padding-top: 32px !important;
     padding-bottom: 24px !important;
   }
 
-  /* ── About page ── */
+  /* About page */
   .about-grid {
     grid-template-columns: 1fr !important;
     gap: 32px !important;
   }
 
-  /* ── Contact page ── */
+  /* Contact page */
   .contact-grid {
     grid-template-columns: 1fr !important;
-    gap: 28px !important;
+    gap: 24px !important;
   }
 
-  /* ── CTA section ── */
-  .cta-title  { font-size: 24px !important; }
-  .cta-desc   { font-size: 14px !important; }
+  /* CTA */
+  .cta-title { font-size: 22px !important; }
+  .cta-desc  { font-size: 14px !important; }
 
-  /* ── Products page ── */
+  /* Products page */
   .products-filters {
     flex-direction: column !important;
     gap: 10px !important;
@@ -68,7 +75,7 @@
     gap: 14px !important;
   }
 
-  /* ── Admin Dashboard ── */
+  /* Admin Dashboard */
   .admin-header {
     flex-direction: column !important;
     align-items: flex-start !important;
@@ -79,7 +86,7 @@
     gap: 12px !important;
   }
 
-  /* ── Admin Products ── */
+  /* Admin Products */
   .admin-products-header {
     flex-direction: column !important;
     align-items: flex-start !important;
@@ -98,7 +105,7 @@
     gap: 14px !important;
   }
 
-  /* ── Admin Invoices ── */
+  /* Admin Invoices */
   .admin-invoices-header {
     flex-direction: column !important;
     align-items: flex-start !important;
@@ -109,7 +116,7 @@
     max-width: 100% !important;
   }
 
-  /* ── Admin Invoice Editor ── */
+  /* Admin Invoice Editor */
   .invoice-layout {
     grid-template-columns: 1fr !important;
     gap: 20px !important;
@@ -142,13 +149,13 @@
     text-align: left !important;
   }
 
-  /* ── Login page ── */
+  /* Login page */
   .login-card {
     padding: 28px 20px !important;
     margin: 16px !important;
   }
 
-  /* ── Tables on mobile: horizontal scroll ── */
+  /* Tables */
   .table-wrap {
     overflow-x: auto !important;
     -webkit-overflow-scrolling: touch;
@@ -157,7 +164,7 @@
     min-width: 600px;
   }
 
-  /* ── Modal adjustments ── */
+  /* Modals */
   .modal-box {
     padding: 20px !important;
     margin: 12px !important;
@@ -168,20 +175,32 @@
   }
 }
 
-/* ── Small phones (≤ 480px) ─────────────────────────────── */
+/* -- Small phones (480px) ------------------------------------------ */
 @media (max-width: 480px) {
 
-  .hero-inner  { padding: 0 !important; }
-  .hero-title  { font-size: 28px !important; line-height: 1.15 !important; }
-  .hero-desc   { font-size: 14px !important; }
-  .hero-right  { grid-template-columns: 1fr 1fr !important; gap: 8px !important; }
-  .hero-card   { padding: 12px 8px !important; }
-  .hero-card-val   { font-size: 22px !important; }
-  .hero-card-label { font-size: 10px !important; }
-  .hero-btns a { padding: 10px 20px !important; font-size: 14px !important; }
+  .hero-inner    { padding: 0 !important; }
+  .hero-title    { font-size: 26px !important; line-height: 1.15 !important; }
+  .hero-desc     { font-size: 14px !important; }
+  .hero-right    { grid-template-columns: 1fr 1fr !important; gap: 8px !important; }
+  .hero-card     { padding: 12px 8px !important; }
+  .hero-card-val   { font-size: 20px !important; }
+  .hero-card-label { font-size: 9px !important; }
+  .hero-btns a   { padding: 10px 18px !important; font-size: 13px !important; }
+  .hero-trust    { flex-wrap: wrap !important; gap: 8px !important; }
 
-  .section-title { font-size: 22px !important; }
+  .section-title { font-size: 20px !important; }
   .page-title    { font-size: 22px !important; }
+
+  .process-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  .footer-inner {
+    grid-template-columns: 1fr !important;
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
 
   .products-grid {
     grid-template-columns: 1fr !important;
@@ -199,15 +218,10 @@
     gap: 6px !important;
   }
 
-  .cta-title { font-size: 22px !important; }
-  .cta-btn   { padding: 10px 24px !important; font-size: 14px !important; }
+  .cta-title { font-size: 20px !important; }
+  .cta-btn   { padding: 10px 24px !important; font-size: 13px !important; }
 
-  .footer-inner {
-    padding-left: 16px !important;
-    padding-right: 16px !important;
-  }
-
-  /* Invoice top actions wrap */
+  /* Invoice actions */
   .invoice-top-actions {
     gap: 6px !important;
   }
@@ -215,4 +229,10 @@
     flex: 1 1 auto !important;
     text-align: center;
   }
+}
+
+/* -- Spin animation for loading spinners --------------------------- */
+@keyframes spin {
+  0%   { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
