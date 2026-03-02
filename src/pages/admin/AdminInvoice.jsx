@@ -153,7 +153,7 @@ export default function AdminInvoice() {
       <title>${docType} ${invoiceNo}</title>
       <style>
         *{box-sizing:border-box;margin:0;padding:0}
-        body{font-family:'Segoe UI',sans-serif;color:#1e293b;background:#fff}
+        body{font-family:'Inter','Segoe UI',sans-serif;color:#1e293b;background:#fff}
         .wrap{padding:40px 50px;max-width:900px;margin:0 auto}
         table{width:100%;border-collapse:collapse}
         th,td{padding:9px 11px;text-align:left;font-size:12px}
@@ -493,8 +493,8 @@ export default function AdminInvoice() {
 
 function Card({ title, children }) {
   return (
-    <div style={{ background:"#fff", borderRadius:14, padding:"20px 22px", boxShadow:"0 1px 4px rgba(0,0,0,0.06)" }}>
-      <h3 style={{ fontSize:11, fontWeight:700, letterSpacing:1.2, color:"#94a3b8", textTransform:"uppercase", margin:"0 0 14px" }}>{title}</h3>
+    <div style={{ background:"#fff", borderRadius:14, padding:"20px 22px", boxShadow:"0 1px 4px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.04)" }}>
+      <h3 style={{ fontSize:11, fontWeight:700, letterSpacing:1.2, color:"#ea580c", textTransform:"uppercase", margin:"0 0 14px" }}>{title}</h3>
       {children}
     </div>
   );
@@ -503,16 +503,16 @@ function Card({ title, children }) {
 function TRow({ l, v, bold, accent, color }) {
   return (
     <div style={{ display:"flex", justifyContent:"space-between", width:230, fontSize: bold?15:13, fontWeight: bold?800:400, padding:"3px 0" }}>
-      <span style={{ color: accent?"#0ea5e9":"#64748b" }}>{l}</span>
-      <span style={{ color: color||(accent?"#0ea5e9":"#0f172a") }}>{v}</span>
+      <span style={{ color: accent?"#ea580c":"#64748b" }}>{l}</span>
+      <span style={{ color: color||(accent?"#ea580c":"#0f172a") }}>{v}</span>
     </div>
   );
 }
 
 const s = {
-  page: { fontFamily:"'Segoe UI',sans-serif", background:"#f1f5f9", minHeight:"100vh", padding:"28px 20px" },
+  page: { fontFamily:"'Inter','Segoe UI',system-ui,sans-serif", background:"#f1f5f9", minHeight:"100vh", padding:"28px 20px" },
   topBar: { display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:24, flexWrap:"wrap", gap:12 },
-  backBtn: { background:"#f1f5f9", border:"none", borderRadius:8, padding:"8px 14px", fontSize:13, fontWeight:600, cursor:"pointer", color:"#475569" },
+  backBtn: { background:"#fff7ed", border:"1.5px solid #fed7aa", borderRadius:8, padding:"8px 14px", fontSize:13, fontWeight:600, cursor:"pointer", color:"#ea580c" },
   pageTitle: { fontSize:24, fontWeight:800, color:"#0f172a", margin:0 },
   pageSub: { fontSize:12, color:"#64748b", margin:"2px 0 0" },
   topActions: { display:"flex", gap:10, flexWrap:"wrap", alignItems:"center" },
@@ -529,29 +529,29 @@ const s = {
   drop: { position:"absolute", top:"100%", left:0, right:0, zIndex:50, background:"#fff", borderRadius:10, border:"1.5px solid #e2e8f0", boxShadow:"0 8px 28px rgba(0,0,0,0.12)", maxHeight:300, overflowY:"auto" },
   dropItem: { display:"flex", justifyContent:"space-between", alignItems:"center", padding:"10px 14px", cursor:"pointer", borderBottom:"1px solid #f1f5f9" },
   dropImg: { width:36, height:36, borderRadius:6, objectFit:"cover", flexShrink:0 },
-  dropImgPlaceholder: { width:36, height:36, background:"#f1f5f9", borderRadius:6, display:"flex", alignItems:"center", justifyContent:"center", fontSize:16 },
+  dropImgPlaceholder: { width:36, height:36, background:"#fff7ed", borderRadius:6, display:"flex", alignItems:"center", justifyContent:"center", fontSize:16 },
   dropName: { fontSize:13, fontWeight:600, color:"#0f172a" },
   dropMeta: { fontSize:11, color:"#94a3b8", marginTop:1 },
-  dropPrice: { fontSize:13, fontWeight:700, color:"#0ea5e9" },
-  addTag: { background:"#0ea5e9", color:"#fff", fontSize:11, fontWeight:700, padding:"2px 8px", borderRadius:5 },
+  dropPrice: { fontSize:13, fontWeight:700, color:"#ea580c" },
+  addTag: { background:"#ea580c", color:"#fff", fontSize:11, fontWeight:700, padding:"2px 8px", borderRadius:5 },
   dropEmpty: { padding:16, textAlign:"center", color:"#94a3b8", fontSize:13 },
   dropClose: { padding:"8px 14px", textAlign:"center", fontSize:12, color:"#94a3b8", borderTop:"1px solid #f1f5f9", cursor:"pointer", background:"#fafafa" },
   /* Table */
   tableWrap: { overflowX:"auto", borderRadius:10, border:"1px solid #e2e8f0", marginBottom:6 },
   table: { width:"100%", borderCollapse:"collapse" },
-  thead: { background:"#f8fafc" },
+  thead: { background:"#fafaf9" },
   th: { padding:"9px 10px", fontSize:10, fontWeight:700, color:"#94a3b8", textTransform:"uppercase", letterSpacing:0.8, borderBottom:"1px solid #e2e8f0" },
   td: { padding:"8px 10px", fontSize:12, borderBottom:"1px solid #f8fafc" },
   trEven: { background:"#f8fafc" },
   trOdd:  { background:"#fff" },
   cellInp: { border:"1px solid transparent", borderRadius:5, padding:"3px 5px", fontSize:12, width:"100%", background:"transparent", outline:"none", color:"#0f172a" },
   stepper: { display:"flex", alignItems:"center", gap:4 },
-  stepBtn: { width:24, height:24, borderRadius:5, border:"1.5px solid #e2e8f0", background:"#f8fafc", cursor:"pointer", fontSize:14, fontWeight:700, color:"#0ea5e9", display:"flex", alignItems:"center", justifyContent:"center" },
+  stepBtn: { width:24, height:24, borderRadius:5, border:"1.5px solid #fed7aa", background:"#fff7ed", cursor:"pointer", fontSize:14, fontWeight:700, color:"#ea580c", display:"flex", alignItems:"center", justifyContent:"center" },
   remBtn: { background:"#fee2e2", color:"#dc2626", border:"none", borderRadius:5, width:24, height:24, cursor:"pointer", fontSize:11, fontWeight:700 },
-  emptyItems: { textAlign:"center", padding:"20px 0", color:"#94a3b8", fontSize:13, border:"2px dashed #e2e8f0", borderRadius:8, marginTop:6 },
+  emptyItems: { textAlign:"center", padding:"20px 0", color:"#94a3b8", fontSize:13, border:"2px dashed #fed7aa", borderRadius:8, marginTop:6 },
   /* Buttons */
   btn: { padding:"9px 16px", borderRadius:8, border:"none", fontSize:13, fontWeight:700, cursor:"pointer" },
-  btnPrimary: { background:"#0ea5e9", color:"#fff" },
+  btnPrimary: { background:"linear-gradient(135deg,#ea580c,#f97316)", color:"#fff", boxShadow:"0 2px 8px rgba(234,88,12,0.2)" },
   btnGhost: { background:"#f1f5f9", color:"#475569" },
   btnSave: { background:"#10b981", color:"#fff" },
   /* Preview */
@@ -561,9 +561,9 @@ const s = {
   docHeader: { display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:18 },
   docCompany: { fontSize:18, fontWeight:800, color:"#0f172a", marginBottom:3 },
   docSmall: { fontSize:10, color:"#64748b", lineHeight:1.7 },
-  docType: { fontSize:22, fontWeight:900, color:"#0ea5e9", letterSpacing:1 },
-  docRule: { height:2, background:"linear-gradient(90deg,#0ea5e9,#38bdf8 60%,transparent)", marginBottom:14, borderRadius:2 },
-  docBillBox: { background:"#f8fafc", borderRadius:8, padding:"12px 14px", borderLeft:"3px solid #0ea5e9", marginBottom:16 },
+  docType: { fontSize:22, fontWeight:900, color:"#ea580c", letterSpacing:1 },
+  docRule: { height:2, background:"linear-gradient(90deg,#ea580c,#f97316 60%,transparent)", marginBottom:14, borderRadius:2 },
+  docBillBox: { background:"#fff7ed", borderRadius:8, padding:"12px 14px", borderLeft:"3px solid #ea580c", marginBottom:16 },
   docSectionTitle: { fontSize:9, fontWeight:800, letterSpacing:1.5, color:"#94a3b8", textTransform:"uppercase", marginBottom:4 },
   docClientName: { fontSize:13, fontWeight:700, color:"#0f172a", marginBottom:2 },
   docTable: { width:"100%", borderCollapse:"collapse", marginBottom:14 },
@@ -571,6 +571,6 @@ const s = {
   docTd: { padding:"8px 9px", fontSize:11, borderBottom:"1px solid #f1f5f9" },
   docTotals: { display:"flex", flexDirection:"column", gap:3, alignItems:"flex-end", marginBottom:16 },
   docTotalRule: { width:230, height:1, background:"#e2e8f0", margin:"4px 0" },
-  docNotes: { marginBottom:12, padding:"10px 12px", background:"#f8fafc", borderRadius:7 },
+  docNotes: { marginBottom:12, padding:"10px 12px", background:"#fafaf9", borderRadius:7 },
   docFooter: { textAlign:"center", fontSize:9, color:"#94a3b8", marginTop:16, paddingTop:10, borderTop:"1px solid #f1f5f9" },
 };

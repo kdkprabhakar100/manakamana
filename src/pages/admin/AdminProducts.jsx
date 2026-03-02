@@ -13,6 +13,7 @@ export default function AdminProducts() {
   const [search,       setSearch]       = useState("");
   const [delConfirm,   setDelConfirm]   = useState(null);
   const [saving,       setSaving]       = useState(false);
+  const [uploadProgress, setUploadProgress] = useState("");
   const fileRef = useRef();
 
   /* ── Filter ── */
@@ -43,31 +44,136 @@ export default function AdminProducts() {
     setShowModal(true);
   };
 
-  /* ── Image file upload ── */
-  const handleImageFile = (e) => {
+  /* ── Compress image using canvas (works for phone & laptop, any size) ── */
+  function compressImage(file) {
+    return new Promise((resolve, reject) => {
+      // Validate file type
+      if (!file.type.startsWith("image/")) {
+        reject(new Error("Please select an image file."));
+        return;
+      }
+
+      const img = new Image();
+      const reader = new FileReader();
+
+      reader.onerror = () => reject(new Error("Failed to read the image file."));
+      reader.onload = (ev) => {
+        img.onerror = () => reject(new Error("Failed to load image. The file may be corrupted."));
+        img.onload = () => {
+          const MAX_DIM = 600;
+          let { width, height } = img;
+
+          // Scale down
+          if (width > MAX_DIM || height > MAX_DIM) {
+            const scale = MAX_DIM / Math.max(width, height);
+            width = Math.round(width * scale);
+            height = Math.round(height * scale);
+          }
+
+          const canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, width, height);
+
+          // Progressively lower quality until under 200KB
+          const tryCompress = (quality) => {
+            canvas.toBlob(
+              (blob) => {
+                if (!blob) {
+                  reject(new Error("Image compression failed."));
+                  return;
+                }
+                if (blob.size > 200 * 1024 && quality > 0.15) {
+                  tryCompress(quality - 0.1);
+                } else {
+                  console.log(`Image compressed: ${(file.size / 1024).toFixed(0)}KB → ${(blob.size / 1024).toFixed(0)}KB (quality: ${quality.toFixed(1)})`);
+                  resolve(blob);
+                }
+              },
+              "image/jpeg",
+              quality
+            );
+          };
+          tryCompress(0.5);
+        };
+        img.src = ev.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  /* ── Convert blob to base64 string ── */
+  function blobToBase64(blob) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(new Error("Failed to convert image."));
+      reader.readAsDataURL(blob);
+    });
+  }
+
+  /* ── Image file upload (compress + preview, stores compressed blob) ── */
+  const handleImageFile = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      setImagePreview(ev.target.result);
-      setForm(f => ({ ...f, image: ev.target.result }));
-    };
-    reader.readAsDataURL(file);
+
+    try {
+      setUploadProgress("Compressing image...");
+      const blob = await compressImage(file);
+      const previewUrl = URL.createObjectURL(blob);
+      setImagePreview(previewUrl);
+      // Store the compressed blob (not the original huge file)
+      setForm(f => ({ ...f, _imageBlob: blob, _imageName: file.name, image: "" }));
+      setUploadProgress("");
+    } catch (err) {
+      console.error("Compression failed:", err);
+      alert("Failed to process image: " + err.message);
+      setUploadProgress("");
+    }
   };
 
   /* ── Save ── */
   const handleSave = async () => {
-    if (!form.name.trim()) return;
+    if (!form.name.trim()) {
+      alert("Product name is required.");
+      return;
+    }
+    if (form.price !== "" && (isNaN(Number(form.price)) || Number(form.price) < 0)) {
+      alert("Price cannot be negative. Please enter a valid price.");
+      return;
+    }
     setSaving(true);
     try {
+      let imageUrl = form.image;
+
+      // Convert compressed blob to base64 (already under 200KB from compression)
+      if (form._imageBlob) {
+        setUploadProgress("Preparing image...");
+        imageUrl = await blobToBase64(form._imageBlob);
+      }
+
+      const productData = {
+        name: form.name.trim(),
+        price: form.price ? Math.abs(Number(form.price)).toString() : "",
+        unit: form.unit,
+        category: form.category,
+        description: form.description,
+        image: imageUrl,
+      };
+
       if (editing) {
-        await updateProduct(editing.id, form);
+        await updateProduct(editing.id, productData);
       } else {
-        await addProduct(form);
+        await addProduct(productData);
       }
       setShowModal(false);
+    } catch (err) {
+      console.error("Save failed:", err);
+      alert("Failed to save product: " + err.message);
     } finally {
       setSaving(false);
+      setUploadProgress("");
     }
   };
 
@@ -206,10 +312,16 @@ export default function AdminProducts() {
                 <label style={s.fieldLabel}>Price (₹)</label>
                 <input
                   type="number"
+                  min="0"
                   style={s.input}
                   placeholder="e.g. 4500"
                   value={form.price}
-                  onChange={e => setForm(f => ({ ...f, price: e.target.value }))}
+                  onChange={e => {
+                    const val = e.target.value;
+                    if (val === "" || Number(val) >= 0) {
+                      setForm(f => ({ ...f, price: val }));
+                    }
+                  }}
                 />
               </div>
               <div>
@@ -244,9 +356,9 @@ export default function AdminProducts() {
               <input
                 style={{ ...s.input, flex: 1, marginBottom: 0 }}
                 placeholder="Paste image URL…"
-                value={form.image.startsWith("data:") ? "" : form.image}
+                value={form._imageBlob ? "" : form.image}
                 onChange={e => {
-                  setForm(f => ({ ...f, image: e.target.value }));
+                  setForm(f => ({ ...f, image: e.target.value, _imageBlob: null, _imageName: "" }));
                   setImagePreview(e.target.value);
                 }}
               />
@@ -254,9 +366,15 @@ export default function AdminProducts() {
                 onClick={() => fileRef.current.click()}>
                 📁 Upload
               </button>
-              <input ref={fileRef} type="file" accept="image/*"
+              <input ref={fileRef} type="file" accept="image/*" capture="environment"
                 style={{ display: "none" }} onChange={handleImageFile} />
             </div>
+
+            {uploadProgress && !saving && (
+              <div style={{ fontSize: 12, color: PRIMARY, marginTop: 6, fontWeight: 600 }}>
+                ⏳ {uploadProgress}
+              </div>
+            )}
 
             {imagePreview && (
               <img src={imagePreview} alt="preview"
@@ -272,7 +390,7 @@ export default function AdminProducts() {
                 style={{ ...s.btn, ...s.btnPrimary, flex: 1, opacity: saving ? 0.7 : 1 }}
                 onClick={handleSave} disabled={saving}
               >
-                {saving ? "Saving…" : editing ? "Save Changes" : "Add Product"}
+                {saving ? (uploadProgress || "Saving…") : editing ? "Save Changes" : "Add Product"}
               </button>
             </div>
           </div>
@@ -303,41 +421,44 @@ export default function AdminProducts() {
   );
 }
 
+const PRIMARY = "#ea580c";
+const PRIMARY_LIGHT = "#f97316";
+
 const s = {
-  page: { fontFamily: "'Segoe UI', sans-serif", background: "#f8fafc", minHeight: "100vh" },
-  inner: { maxWidth: 1200, margin: "0 auto", padding: "36px 24px" },
+  page: { fontFamily: "'Inter','Segoe UI',system-ui,sans-serif", background: "#f8fafc", minHeight: "100vh" },
+  inner: { maxWidth: 1200, margin: "0 auto", padding: "28px 24px" },
   header: { display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 14, flexWrap: "wrap", gap: 12 },
-  label: { color: "#0ea5e9", fontWeight: 700, fontSize: 11, letterSpacing: 2, margin: 0, textTransform: "uppercase" },
+  label: { color: PRIMARY_LIGHT, fontWeight: 700, fontSize: 11, letterSpacing: 2, margin: 0, textTransform: "uppercase" },
   title: { fontSize: 28, fontWeight: 800, color: "#0f172a", margin: "4px 0 0" },
   headerRight: { display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" },
   search: { padding: "9px 14px", borderRadius: 9, border: "1.5px solid #e2e8f0", fontSize: 14, outline: "none", width: 240, boxSizing: "border-box" },
-  addBtn: { background: "#0ea5e9", color: "#fff", border: "none", borderRadius: 9, padding: "10px 20px", fontSize: 14, fontWeight: 700, cursor: "pointer" },
+  addBtn: { background: `linear-gradient(135deg,${PRIMARY},${PRIMARY_LIGHT})`, color: "#fff", border: "none", borderRadius: 9, padding: "10px 20px", fontSize: 14, fontWeight: 700, cursor: "pointer", boxShadow: "0 2px 8px rgba(234,88,12,0.25)" },
   banner: { borderRadius: 10, padding: "10px 16px", marginBottom: 24, fontSize: 13, fontWeight: 500 },
   bannerFire: { background: "#ecfdf5", border: "1px solid #6ee7b7", color: "#065f46" },
   bannerLocal: { background: "#fffbeb", border: "1px solid #fcd34d", color: "#92400e" },
   loading: { textAlign: "center", padding: "60px 0", color: "#64748b" },
   spinnerWrap: { display: "flex", justifyContent: "center", marginBottom: 12 },
-  spinner: { width: 36, height: 36, border: "3px solid #e2e8f0", borderTop: "3px solid #0ea5e9", borderRadius: "50%" },
+  spinner: { width: 36, height: 36, border: "3px solid #e2e8f0", borderTop: `3px solid ${PRIMARY}`, borderRadius: "50%", animation: "spin 0.8s linear infinite" },
   empty: { textAlign: "center", padding: "60px 0" },
   grid: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 24 },
-  card: { background: "#fff", borderRadius: 16, overflow: "hidden", boxShadow: "0 2px 12px rgba(0,0,0,0.07)" },
-  imageWrap: { position: "relative", background: "#f1f5f9", height: 200, overflow: "hidden" },
+  card: { background: "#fff", borderRadius: 16, overflow: "hidden", boxShadow: "0 1px 4px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.04)", border: "1px solid #f1f5f9", transition: "box-shadow 0.2s" },
+  imageWrap: { position: "relative", background: "#f8f4f0", height: 200, overflow: "hidden" },
   image: { width: "100%", height: "100%", objectFit: "cover" },
   imagePlaceholder: { width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 52 },
-  badge: { position: "absolute", top: 10, right: 10, background: "#0ea5e9", color: "#fff", fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 20 },
+  badge: { position: "absolute", top: 10, right: 10, background: PRIMARY, color: "#fff", fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 20 },
   cardBody: { padding: 16 },
   productName: { fontSize: 15, fontWeight: 700, color: "#0f172a", margin: "0 0 4px", lineHeight: 1.3 },
   productDesc: { fontSize: 12, color: "#64748b", margin: "0 0 6px", lineHeight: 1.5 },
-  unitTag: { display: "inline-block", background: "#f1f5f9", color: "#475569", fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 6, marginBottom: 8 },
-  price: { color: "#0ea5e9", fontWeight: 700, fontSize: 18, margin: "0 0 12px" },
+  unitTag: { display: "inline-block", background: "#fff7ed", color: PRIMARY, fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 6, marginBottom: 8 },
+  price: { color: PRIMARY, fontWeight: 700, fontSize: 18, margin: "0 0 12px" },
   cardActions: { display: "flex", gap: 8 },
   btn: { padding: "9px 14px", borderRadius: 8, border: "none", fontSize: 13, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" },
-  btnPrimary:   { background: "#0ea5e9", color: "#fff" },
-  btnSecondary: { background: "#e2e8f0", color: "#334155" },
+  btnPrimary:   { background: `linear-gradient(135deg,${PRIMARY},${PRIMARY_LIGHT})`, color: "#fff", boxShadow: "0 2px 8px rgba(234,88,12,0.2)" },
+  btnSecondary: { background: "#f1f5f9", color: "#334155" },
   btnDanger:    { background: "#fee2e2", color: "#b91c1c" },
-  btnOutline:   { background: "#fff", color: "#0ea5e9", border: "1.5px solid #0ea5e9" },
+  btnOutline:   { background: "#fff", color: PRIMARY, border: `1.5px solid ${PRIMARY}` },
   btnWa:        { background: "#dcfce7", color: "#16a34a" },
-  overlay: { position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 999, padding: 16 },
+  overlay: { position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 999, padding: 16, backdropFilter: "blur(4px)" },
   modal: { background: "#fff", borderRadius: 18, padding: 28, width: "100%", maxWidth: 500, boxShadow: "0 20px 60px rgba(0,0,0,0.2)", maxHeight: "90vh", overflowY: "auto" },
   modalTitle: { fontSize: 20, fontWeight: 800, color: "#0f172a", marginTop: 0, marginBottom: 20 },
   twoCol: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 },

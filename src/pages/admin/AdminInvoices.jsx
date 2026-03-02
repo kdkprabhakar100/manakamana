@@ -41,7 +41,7 @@ export default function AdminInvoices() {
         ) : filtered.length === 0 ? (
           <div style={s.empty}>
             <p style={{fontSize:40}}>🧾</p>
-            <p>No invoices yet. <Link to="/admin/invoice/new" style={{color:"#0ea5e9"}}>Create your first one →</Link></p>
+            <p>No invoices yet. <Link to="/admin/invoice/new" style={{color:"#ea580c",fontWeight:600}}>Create your first one →</Link></p>
           </div>
         ) : (
           <div className="table-wrap" style={s.tableWrap}>
@@ -66,7 +66,7 @@ export default function AdminInvoices() {
                       </td>
                       <td style={s.td}>{inv.invoiceDate||"—"}</td>
                       <td style={s.td}>{(inv.items||[]).length} items</td>
-                      <td style={{...s.td,fontWeight:700,color:"#0ea5e9"}}>
+                      <td style={{...s.td,fontWeight:700,color:"#ea580c"}}>
                         ₹{(inv.total||0).toLocaleString("en-IN",{minimumFractionDigits:2})}
                       </td>
                       <td style={s.td}>
@@ -101,28 +101,28 @@ export default function AdminInvoices() {
 }
 
 const s = {
-  page: { background:"#f8fafc", minHeight:"100vh", fontFamily:"'Segoe UI',sans-serif" },
-  inner: { maxWidth:1200, margin:"0 auto", padding:"36px 24px" },
+  page: { background:"#f8fafc", minHeight:"100vh", fontFamily:"'Inter','Segoe UI',system-ui,sans-serif" },
+  inner: { maxWidth:1200, margin:"0 auto", padding:"28px 24px" },
   header: { display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:20 },
   title: { fontSize:26, fontWeight:800, color:"#0f172a", margin:0 },
   sub: { fontSize:13, color:"#64748b", marginTop:4 },
-  newBtn: { background:"#0ea5e9", color:"#fff", padding:"10px 20px", borderRadius:9, fontSize:14, fontWeight:700, textDecoration:"none" },
+  newBtn: { background:"linear-gradient(135deg,#ea580c,#f97316)", color:"#fff", padding:"10px 20px", borderRadius:9, fontSize:14, fontWeight:700, textDecoration:"none", boxShadow:"0 2px 8px rgba(234,88,12,0.25)" },
   search: { width:"100%", maxWidth:440, padding:"10px 14px", borderRadius:9, border:"1.5px solid #e2e8f0", fontSize:14, marginBottom:20, outline:"none", boxSizing:"border-box" },
-  tableWrap: { background:"#fff", borderRadius:14, overflow:"hidden", boxShadow:"0 1px 6px rgba(0,0,0,0.06)" },
+  tableWrap: { background:"#fff", borderRadius:14, overflow:"hidden", boxShadow:"0 1px 4px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.04)" },
   table: { width:"100%", borderCollapse:"collapse" },
-  thead: { background:"#f8fafc" },
+  thead: { background:"#fafaf9" },
   th: { padding:"11px 14px", fontSize:11, fontWeight:700, color:"#94a3b8", textTransform:"uppercase", letterSpacing:0.8, borderBottom:"1px solid #e2e8f0", textAlign:"left" },
   td: { padding:"13px 14px", fontSize:13, borderBottom:"1px solid #f1f5f9", verticalAlign:"middle" },
   trEven: { background:"#fff" },
-  trOdd:  { background:"#fafafa" },
+  trOdd:  { background:"#fafaf9" },
   invNo: { fontWeight:700, color:"#334155", fontFamily:"monospace", fontSize:13 },
   badge: { padding:"3px 10px", borderRadius:20, fontSize:11, fontWeight:700 },
   rowActs: { display:"flex", gap:6 },
-  editBtn: { background:"#f1f5f9", color:"#334155", border:"none", borderRadius:6, padding:"6px 12px", fontSize:12, fontWeight:600, cursor:"pointer" },
+  editBtn: { background:"#fff7ed", color:"#ea580c", border:"1px solid #fed7aa", borderRadius:6, padding:"6px 12px", fontSize:12, fontWeight:600, cursor:"pointer" },
   delBtn:  { background:"#fee2e2", color:"#dc2626", border:"none", borderRadius:6, padding:"6px 10px", fontSize:12, cursor:"pointer" },
   loading: { textAlign:"center", padding:60, color:"#64748b" },
   empty:   { textAlign:"center", padding:60, color:"#94a3b8", fontSize:15, lineHeight:2 },
-  overlay: { position:"fixed", inset:0, background:"rgba(0,0,0,0.4)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:999, padding:16 },
+  overlay: { position:"fixed", inset:0, background:"rgba(0,0,0,0.5)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:999, padding:16, backdropFilter:"blur(4px)" },
   modal:   { background:"#fff", borderRadius:16, padding:"28px", maxWidth:360, width:"100%", boxShadow:"0 16px 50px rgba(0,0,0,0.18)" },
   cancelBtn: { flex:1, padding:"10px", background:"#f1f5f9", color:"#334155", border:"none", borderRadius:8, fontWeight:600, cursor:"pointer" },
   confirmDelBtn: { flex:1, padding:"10px", background:"#ef4444", color:"#fff", border:"none", borderRadius:8, fontWeight:700, cursor:"pointer" },
