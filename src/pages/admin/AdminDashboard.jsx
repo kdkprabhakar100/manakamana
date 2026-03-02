@@ -11,6 +11,8 @@ export default function AdminDashboard() {
 
   const totalRevenue = invoices.reduce((s, inv) => s + (inv.total || 0), 0);
   const recentInvoices = invoices.slice(0, 5);
+  const lowStockProducts = products.filter(p => p.quantity !== undefined && p.quantity < 5);
+  const outOfStockProducts = products.filter(p => p.quantity !== undefined && p.quantity === 0);
 
   return (
     <div style={s.page}>
@@ -42,6 +44,42 @@ export default function AdminDashboard() {
             </div>
           ))}
         </div>
+
+        {/* ── Notifications Section ── */}
+        {(lowStockProducts.length > 0 || outOfStockProducts.length > 0) && (
+          <div style={s.notifSection}>
+            <div style={s.notifHeader}>
+              <h2 style={s.notifTitle}>🔔 Notifications</h2>
+              <span style={s.notifBadge}>{lowStockProducts.length}</span>
+            </div>
+
+            {outOfStockProducts.length > 0 && (
+              <div style={s.notifCard_critical}>
+                <div style={s.notifIcon}>🚨</div>
+                <div style={{flex:1}}>
+                  <strong style={{color:"#991b1b",fontSize:14}}>Out of Stock</strong>
+                  <p style={{margin:"4px 0 0",fontSize:13,color:"#b91c1c"}}>
+                    {outOfStockProducts.map(p => p.name).join(", ")} — <strong>0 units remaining</strong>
+                  </p>
+                </div>
+                <Link to="/admin/products" style={s.notifAction}>Restock →</Link>
+              </div>
+            )}
+
+            {lowStockProducts.filter(p => p.quantity > 0).length > 0 && (
+              <div style={s.notifCard_warning}>
+                <div style={s.notifIcon}>⚠️</div>
+                <div style={{flex:1}}>
+                  <strong style={{color:"#92400e",fontSize:14}}>Low Stock Warning</strong>
+                  <p style={{margin:"4px 0 0",fontSize:13,color:"#a16207"}}>
+                    {lowStockProducts.filter(p => p.quantity > 0).map(p => `${p.name} (${p.quantity} left)`).join(", ")}
+                  </p>
+                </div>
+                <Link to="/admin/products" style={s.notifAction}>Manage →</Link>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Quick actions */}
         <div style={s.quickGrid}>
@@ -132,4 +170,13 @@ const s = {
   invNo: { fontWeight: 700, color: "#334155" },
   typeBadge: { padding: "3px 10px", borderRadius: 20, fontSize: 11, fontWeight: 700 },
   viewBtn: { color: PRIMARY, fontWeight: 600, fontSize: 13, textDecoration: "none" },
+  // Notification styles
+  notifSection: { background: "#fff", borderRadius: 14, padding: "20px 22px", marginBottom: 24, boxShadow: "0 1px 4px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.04)", border: "1px solid #fecaca" },
+  notifHeader: { display: "flex", alignItems: "center", gap: 10, marginBottom: 16 },
+  notifTitle: { fontSize: 17, fontWeight: 700, color: "#0f172a", margin: 0 },
+  notifBadge: { background: "#ef4444", color: "#fff", fontSize: 11, fontWeight: 800, padding: "2px 8px", borderRadius: 20, minWidth: 22, textAlign: "center" },
+  notifCard_critical: { display: "flex", alignItems: "center", gap: 14, background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 10, padding: "14px 16px", marginBottom: 10 },
+  notifCard_warning: { display: "flex", alignItems: "center", gap: 14, background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 10, padding: "14px 16px", marginBottom: 10 },
+  notifIcon: { fontSize: 24, flexShrink: 0 },
+  notifAction: { color: PRIMARY, fontWeight: 700, fontSize: 13, textDecoration: "none", whiteSpace: "nowrap", flexShrink: 0 },
 };

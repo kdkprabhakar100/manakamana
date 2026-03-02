@@ -19,7 +19,7 @@ export default function AdminInvoice() {
   const navigate      = useNavigate();
   const printRef      = useRef();
 
-  const { products }                           = useProducts();   // ← Live from Firebase
+  const { products, updateProduct }             = useProducts();   // ← Live from Firebase
   const { invoices, saveInvoice, updateInvoice } = useInvoices();
 
   /* ── Load existing invoice when editing ── */
@@ -84,8 +84,17 @@ export default function AdminInvoice() {
 
   /* ── Add product to line items ── */
   function addProduct(product) {
+    const stock = product.quantity !== undefined ? Number(product.quantity) : 0;
+    if (stock <= 0) {
+      alert(`❌ "${product.name}" is out of stock (0 units). Cannot add to invoice.`);
+      return;
+    }
     const exists = items.find(i => i.productId === product.id);
     if (exists) {
+      if (exists.qty >= stock) {
+        alert(`⚠️ Only ${stock} unit(s) of "${product.name}" available in stock.`);
+        return;
+      }
       setItems(prev => prev.map(i =>
         i.productId === product.id ? { ...i, qty: i.qty + 1 } : i
       ));
@@ -105,15 +114,26 @@ export default function AdminInvoice() {
   const removeItem = (id) => setItems(p => p.filter(i => i.id !== id));
 
   const updateItem = (id, field, value) =>
-    setItems(prev => prev.map(i =>
-      i.id === id
-        ? { ...i, [field]: field==="name"||field==="unit" ? value : Number(value)||0 }
-        : i
-    ));
+    setItems(prev => prev.map(i => {
+      if (i.id !== id) return i;
+      if (field === "qty" && i.productId) {
+        const prod = products.find(p => p.id === i.productId);
+        const stock = prod?.quantity !== undefined ? Number(prod.quantity) : Infinity;
+        const newQty = Math.min(Math.max(1, Number(value) || 0), stock);
+        return { ...i, qty: newQty };
+      }
+      return { ...i, [field]: field==="name"||field==="unit" ? value : Number(value)||0 };
+    }));
 
   const changeQty = (id, delta) =>
-    setItems(prev => prev.map(i =>
-      i.id === id ? { ...i, qty: Math.max(1, i.qty + delta) } : i
+    setItems(prev => prev.map(i => {
+      if (i.id !== id) return i;
+      const prod = i.productId ? products.find(p => p.id === i.productId) : null;
+      const stock = prod?.quantity !== undefined ? Number(prod.quantity) : Infinity;
+      const newQty = Math.min(Math.max(1, i.qty + delta), stock);
+      if (newQty === i.qty && delta > 0) return i; // already at max
+      return { ...i, qty: newQty };
+    }
     ));
 
   /* ── Calculations ── */
@@ -125,6 +145,24 @@ export default function AdminInvoice() {
 
   /* ── Save to Firebase ── */
   const handleSave = async () => {
+    /* ── Validate stock before saving ── */
+    const stockErrors = [];
+    for (const item of items) {
+      if (!item.productId) continue;
+      const prod = products.find(p => p.id === item.productId);
+      if (!prod) continue;
+      const stock = prod.quantity !== undefined ? Number(prod.quantity) : 0;
+      if (stock <= 0) {
+        stockErrors.push(`❌ ${prod.name} — out of stock (0 units)`);
+      } else if (item.qty > stock) {
+        stockErrors.push(`⚠️ ${prod.name} — only ${stock} in stock, but ${item.qty} requested`);
+      }
+    }
+    if (stockErrors.length > 0) {
+      alert(`Cannot save invoice — stock issues:\n\n${stockErrors.join('\n')}\n\nPlease adjust quantities or restock.`);
+      return;
+    }
+
     setSaving(true);
     const data = {
       invoiceNo, invoiceDate, dueDate, docType,
@@ -139,6 +177,29 @@ export default function AdminInvoice() {
       } else {
         await saveInvoice(data);
       }
+
+      /* ── Deduct stock quantity for each line item ── */
+      const lowStockAlerts = [];
+      for (const item of items) {
+        if (!item.productId) continue;
+        const prod = products.find(p => p.id === item.productId);
+        if (!prod) continue;
+        const currentQty = prod.quantity !== undefined ? Number(prod.quantity) : 0;
+        const newQty = Math.max(0, currentQty - item.qty);
+        try {
+          await updateProduct(prod.id, { quantity: newQty });
+          if (newQty < 5) {
+            lowStockAlerts.push(`${prod.name} (${newQty} left)`);
+          }
+        } catch (err) {
+          console.error(`Failed to deduct stock for ${prod.name}:`, err);
+        }
+      }
+
+      if (lowStockAlerts.length > 0) {
+        alert(`⚠️ Low Stock Alert!\n\nThe following products now have less than 5 units:\n• ${lowStockAlerts.join('\n• ')}\n\nPlease restock soon.`);
+      }
+
       navigate("/admin/invoices");
     } finally {
       setSaving(false);
@@ -225,9 +286,9 @@ export default function AdminInvoice() {
           {/* Client */}
           <Card title="Bill To (Client)">
             <div className="invoice-fgrid" style={s.fGrid}>
-              {[["name","Client Name"],["company","Company"],["phone","Phone"],["email","Email"],["address","Address"],["gstin","VAT/PAN"]].map(([k,lbl])=>(
+              {[["name","Client Name",true],["company","Company",true],["phone","Phone"],["email","Email"],["address","Address",true],["gstin","VAT/PAN"]].map(([k,lbl,req])=>(
                 <div key={k} style={k==="address"?{gridColumn:"1/-1"}:{}}>
-                  <label style={s.lbl}>{lbl}</label>
+                  <label style={s.lbl}>{lbl}{req && <span style={s.req}> *</span>}</label>
                   <input style={s.inp} value={client[k]} placeholder={lbl}
                     onChange={e=>setClient(p=>({...p,[k]:e.target.value}))} />
                 </div>
@@ -243,7 +304,7 @@ export default function AdminInvoice() {
                 <input style={{...s.inp,background:"#f8fafc",color:"#94a3b8"}} value={invoiceNo} readOnly />
               </div>
               <div>
-                <label style={s.lbl}>Date</label>
+                <label style={s.lbl}>Date<span style={s.req}> *</span></label>
                 <input type="date" style={s.inp} value={invoiceDate} onChange={e=>setInvoiceDate(e.target.value)} />
               </div>
               <div>
@@ -251,7 +312,7 @@ export default function AdminInvoice() {
                 <input type="date" style={s.inp} value={dueDate} onChange={e=>setDueDate(e.target.value)} />
               </div>
               <div>
-                <label style={s.lbl}>Type</label>
+                <label style={s.lbl}>Type<span style={s.req}> *</span></label>
                 <select style={s.inp} value={docType} onChange={e=>setDocType(e.target.value)}>
                   {["Estimate","Invoice","Proforma Invoice","Quotation"].map(o=><option key={o}>{o}</option>)}
                 </select>
@@ -521,6 +582,7 @@ const s = {
   editor: { display:"flex", flexDirection:"column", gap:16 },
   fGrid: { display:"grid", gridTemplateColumns:"1fr 1fr", gap:"0 16px" },
   lbl: { display:"block", fontSize:12, fontWeight:600, color:"#374151", marginBottom:5 },
+  req: { color:"#ef4444", fontWeight:700 },
   inp: { width:"100%", padding:"9px 12px", borderRadius:8, border:"1.5px solid #e2e8f0", fontSize:13, color:"#0f172a", marginBottom:12, boxSizing:"border-box", outline:"none" },
   infoLine: { fontSize:12, color:"#64748b", marginTop:2 },
   /* Search */

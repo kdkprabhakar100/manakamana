@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { useProducts } from "../../hooks/useProducts";
 
-const EMPTY = { name: "", price: "", unit: "Nos", category: "", description: "", image: "" };
+const EMPTY = { name: "", price: "", unit: "Nos", category: "", description: "", image: "", quantity: "" };
 
 export default function AdminProducts() {
   const { products, loading, addProduct, updateProduct, deleteProduct, useLocal } = useProducts();
@@ -39,6 +39,7 @@ export default function AdminProducts() {
       category: p.category || "",
       description: p.description || "",
       image: p.image || "",
+      quantity: p.quantity !== undefined ? String(p.quantity) : "",
     });
     setImagePreview(p.image || "");
     setShowModal(true);
@@ -160,6 +161,7 @@ export default function AdminProducts() {
         category: form.category,
         description: form.description,
         image: imageUrl,
+        quantity: form.quantity !== "" ? Number(form.quantity) : 0,
       };
 
       if (editing) {
@@ -211,6 +213,17 @@ export default function AdminProducts() {
             : `✅ Connected to Firebase — ${products.length} products in catalogue. Changes sync instantly.`
           }
         </div>
+
+        {/* Low stock notification */}
+        {(() => {
+          const lowStock = products.filter(p => (p.quantity !== undefined && p.quantity < 5));
+          return lowStock.length > 0 && (
+            <div style={s.lowStockBanner}>
+              ⚠️ Low Stock Alert — {lowStock.length} product{lowStock.length > 1 ? 's' : ''} {lowStock.length > 1 ? 'have' : 'has'} less than 5 units:{' '}
+              <strong>{lowStock.map(p => `${p.name} (${p.quantity ?? 0})`).join(', ')}</strong>
+            </div>
+          );
+        })()}
 
         {/* ── Loading ── */}
         {loading ? (
@@ -269,10 +282,15 @@ export default function AdminProducts() {
                     }
                   </p>
 
-                  {/* Public actions */}
-                  <div style={s.cardActions}>
-                    <button style={{ ...s.btn, ...s.btnOutline, flex: 1 }}>📞 Call Now</button>
-                    <button style={{ ...s.btn, ...s.btnWa, flex: 1 }}>💬 WhatsApp</button>
+                  {/* Quantity */}
+                  <div style={{
+                    ...s.qtyTag,
+                    ...(product.quantity !== undefined && product.quantity < 5 ? s.qtyLow : {})
+                  }}>
+                    📦 Stock: <strong>{product.quantity !== undefined ? product.quantity : '—'}</strong> {product.unit || 'units'}
+                    {product.quantity !== undefined && product.quantity < 5 && (
+                      <span style={s.lowBadge}>LOW</span>
+                    )}
                   </div>
 
                   {/* Admin actions */}
@@ -299,7 +317,7 @@ export default function AdminProducts() {
               {editing ? "✏️ Edit Product" : "➕ Add New Product"}
             </h2>
 
-            <label style={s.fieldLabel}>Product Name *</label>
+            <label style={s.fieldLabel}>Product Name <span style={{color:'#ef4444',fontWeight:700}}>*</span></label>
             <input
               style={s.input}
               placeholder="e.g. Annulus Ring Gear Set"
@@ -333,6 +351,34 @@ export default function AdminProducts() {
                   onChange={e => setForm(f => ({ ...f, unit: e.target.value }))}
                 />
               </div>
+            </div>
+
+            <div className="modal-two-col" style={s.twoCol}>
+              <div>
+                <label style={s.fieldLabel}>Quantity in Stock</label>
+                <input
+                  type="number"
+                  min="0"
+                  style={{
+                    ...s.input,
+                    ...(form.quantity !== "" && Number(form.quantity) < 5 ? { borderColor: '#ef4444', background: '#fef2f2' } : {})
+                  }}
+                  placeholder="e.g. 25"
+                  value={form.quantity}
+                  onChange={e => {
+                    const val = e.target.value;
+                    if (val === "" || Number(val) >= 0) {
+                      setForm(f => ({ ...f, quantity: val }));
+                    }
+                  }}
+                />
+                {form.quantity !== "" && Number(form.quantity) < 5 && (
+                  <p style={{ color: '#ef4444', fontSize: 11, fontWeight: 600, margin: '-10px 0 10px' }}>
+                    ⚠️ Low stock! Less than 5 units.
+                  </p>
+                )}
+              </div>
+              <div />
             </div>
 
             <label style={s.fieldLabel}>Category</label>
@@ -436,6 +482,10 @@ const s = {
   banner: { borderRadius: 10, padding: "10px 16px", marginBottom: 24, fontSize: 13, fontWeight: 500 },
   bannerFire: { background: "#ecfdf5", border: "1px solid #6ee7b7", color: "#065f46" },
   bannerLocal: { background: "#fffbeb", border: "1px solid #fcd34d", color: "#92400e" },
+  lowStockBanner: { borderRadius: 10, padding: "10px 16px", marginBottom: 24, fontSize: 13, fontWeight: 500, background: "#fef2f2", border: "1px solid #fca5a5", color: "#991b1b" },
+  qtyTag: { display: "flex", alignItems: "center", gap: 6, background: "#f0fdf4", color: "#166534", fontSize: 12, fontWeight: 600, padding: "5px 10px", borderRadius: 7, marginBottom: 12 },
+  qtyLow: { background: "#fef2f2", color: "#991b1b" },
+  lowBadge: { background: "#ef4444", color: "#fff", fontSize: 9, fontWeight: 800, padding: "1px 6px", borderRadius: 4, marginLeft: 6, letterSpacing: 1 },
   loading: { textAlign: "center", padding: "60px 0", color: "#64748b" },
   spinnerWrap: { display: "flex", justifyContent: "center", marginBottom: 12 },
   spinner: { width: 36, height: 36, border: "3px solid #e2e8f0", borderTop: `3px solid ${PRIMARY}`, borderRadius: "50%", animation: "spin 0.8s linear infinite" },
