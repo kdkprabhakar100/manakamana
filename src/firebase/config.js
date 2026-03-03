@@ -1,7 +1,7 @@
 
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
-import { getAuth } from "firebase/auth";
+import { getAuth, setPersistence, browserSessionPersistence } from "firebase/auth";
 import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
@@ -18,4 +18,8 @@ const app = initializeApp(firebaseConfig);
 export const db      = getFirestore(app);
 export const auth    = getAuth(app);
 export const storage = getStorage(app);
+
+// Force login on every new browser session (closing browser clears auth)
+setPersistence(auth, browserSessionPersistence);
+
 export default app;
