@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 
 export default function LoginPage() {
-  const { login, ADMIN_EMAIL } = useAuth();
+  const { login } = useAuth();
   const navigate = useNavigate();
   const [email,    setEmail]    = useState("");
   const [password, setPassword] = useState("");
@@ -34,8 +34,8 @@ export default function LoginPage() {
     try {
       await login(email, password);
       navigate("/admin");
-    } catch {
-      setError("Invalid email or password. Please try again.");
+    } catch (err) {
+      setError(err?.message?.includes("Too many") ? err.message : "Invalid email or password. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -63,7 +63,7 @@ export default function LoginPage() {
             <label style={s.label}>Email Address</label>
             <input
               type="email" style={{ ...s.input, ...(errors.email ? s.inputErr : {}) }}
-              placeholder={ADMIN_EMAIL || "admin@example.com"}
+              placeholder="admin@example.com"
               value={email} onChange={e => { setEmail(e.target.value); setErrors(er => ({...er, email: ""})); }}
             />
             {errors.email && <span style={s.errMsg}>{errors.email}</span>}

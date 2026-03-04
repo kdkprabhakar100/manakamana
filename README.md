@@ -74,10 +74,11 @@ const firebaseConfig = {
 ### Step 4 — Create admin user in Firebase
 1. Go to Firebase Console → **Authentication** → **Users**
 2. Click **Add User**
-3. Email: `admin@manakamana.com`
-4. Password: `Admin@1234`
+3. Email: your admin email
+4. Password: a strong password (min 8 chars, mixed case, numbers, symbols)
 
-> You can change these credentials in `src/hooks/useAuth.jsx` (ADMIN_EMAIL / ADMIN_PASSWORD)
+> Set the admin email in `src/hooks/useAuth.jsx` or via the `VITE_ADMIN_EMAIL` environment variable.
+> **NEVER** commit passwords to source code.
 
 ### Step 5 — Run the app
 ```bash

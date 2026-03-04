@@ -81,13 +81,13 @@
           </div>
           <div style={s.whyGrid}>
             {[
-              { icon: "&#9989;", t: "Quality First", d: "Every product is verified for authenticity and quality before it reaches you. We source directly from OEM and trusted aftermarket manufacturers." },
-              { icon: "&#129309;", t: "Customer Trust", d: "We build long-term relationships based on honesty, transparency, and reliability. Your success is our success." },
-              { icon: "&#9889;", t: "Fast Turnaround", d: "We understand downtime costs money. Our efficient logistics ensure your machines don't stay idle." },
-              { icon: "&#128736;", t: "Expert Support", d: "Our team knows heavy machinery inside out and provides the right technical guidance every time." },
+              { icon: "✅", t: "Quality First", d: "Every product is verified for authenticity and quality before it reaches you. We source directly from OEM and trusted aftermarket manufacturers." },
+              { icon: "🤝", t: "Customer Trust", d: "We build long-term relationships based on honesty, transparency, and reliability. Your success is our success." },
+              { icon: "⚡", t: "Fast Turnaround", d: "We understand downtime costs money. Our efficient logistics ensure your machines don't stay idle." },
+              { icon: "🛠", t: "Expert Support", d: "Our team knows heavy machinery inside out and provides the right technical guidance every time." },
             ].map(v => (
               <div key={v.t} style={s.whyCard}>
-                <div style={s.whyIconWrap} dangerouslySetInnerHTML={{ __html: v.icon }} />
+                <div style={s.whyIconWrap}>{v.icon}</div>
                 <h3 style={s.whyTitle}>{v.t}</h3>
                 <p style={s.whyDesc}>{v.d}</p>
               </div>

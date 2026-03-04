@@ -11,7 +11,8 @@ function fmt(n) {
 
 let _counter = 1001;
 function newInvoiceNo() {
-  return `EST-${new Date().getFullYear()}-${_counter++}`;
+  const ts = Date.now().toString(36).toUpperCase();
+  return `EST-${new Date().getFullYear()}-${ts}-${_counter++}`;
 }
 
 export default function AdminInvoice() {
@@ -185,32 +186,35 @@ export default function AdminInvoice() {
       clientName: client.name,
     };
     try {
+      const isNewInvoice = !(id && id !== "new");
       if (id && id !== "new") {
         await updateInvoice(id, data);
       } else {
         await saveInvoice(data);
       }
 
-      /* ── Deduct stock quantity for each line item ── */
-      const lowStockAlerts = [];
-      for (const item of items) {
-        if (!item.productId) continue;
-        const prod = products.find(p => p.id === item.productId);
-        if (!prod) continue;
-        const currentQty = prod.quantity !== undefined ? Number(prod.quantity) : 0;
-        const newQty = Math.max(0, currentQty - item.qty);
-        try {
-          await updateProduct(prod.id, { quantity: newQty });
-          if (newQty < 5) {
-            lowStockAlerts.push(`${prod.name} (${newQty} left)`);
+      /* ── Deduct stock quantity ONLY for NEW invoices (not edits) ── */
+      if (isNewInvoice) {
+        const lowStockAlerts = [];
+        for (const item of items) {
+          if (!item.productId) continue;
+          const prod = products.find(p => p.id === item.productId);
+          if (!prod) continue;
+          const currentQty = prod.quantity !== undefined ? Number(prod.quantity) : 0;
+          const newQty = Math.max(0, currentQty - item.qty);
+          try {
+            await updateProduct(prod.id, { quantity: newQty });
+            if (newQty < 5) {
+              lowStockAlerts.push(`${prod.name} (${newQty} left)`);
+            }
+          } catch (err) {
+            console.error(`Failed to deduct stock for ${prod.name}:`, err);
           }
-        } catch (err) {
-          console.error(`Failed to deduct stock for ${prod.name}:`, err);
         }
-      }
 
-      if (lowStockAlerts.length > 0) {
-        alert(`⚠️ Low Stock Alert!\n\nThe following products now have less than 5 units:\n• ${lowStockAlerts.join('\n• ')}\n\nPlease restock soon.`);
+        if (lowStockAlerts.length > 0) {
+          alert(`⚠️ Low Stock Alert!\n\nThe following products now have less than 5 units:\n• ${lowStockAlerts.join('\n• ')}\n\nPlease restock soon.`);
+        }
       }
 
       navigate("/admin/invoices");
@@ -219,12 +223,12 @@ export default function AdminInvoice() {
     }
   };
 
-  /* ── Print ── */
+  /* ── Print (XSS-safe: cloneNode instead of raw innerHTML) ── */
   const handlePrint = () => {
-    const html = printRef.current.innerHTML;
+    const safeTitle = `${docType} ${invoiceNo}`.replace(/[<>"'&]/g, "");
     const w = window.open("","_blank");
     w.document.write(`<html><head>
-      <title>${docType} ${invoiceNo}</title>
+      <title>${safeTitle}</title>
       <style>
         *{box-sizing:border-box;margin:0;padding:0}
         body{font-family:'Inter','Segoe UI',sans-serif;color:#1e293b;background:#fff}
@@ -233,8 +237,12 @@ export default function AdminInvoice() {
         th,td{padding:9px 11px;text-align:left;font-size:12px}
         @media print{body{margin:0}.wrap{padding:20px 30px}}
       </style>
-    </head><body><div class="wrap">${html}</div></body></html>`);
+    </head><body><div class="wrap" id="print-root"></div></body></html>`);
     w.document.close();
+    const clone = printRef.current.cloneNode(true);
+    // Strip any script tags that may have been injected
+    clone.querySelectorAll("script").forEach(el => el.remove());
+    w.document.getElementById("print-root").appendChild(clone);
     w.focus();
     setTimeout(() => { w.print(); w.close(); }, 500);
   };

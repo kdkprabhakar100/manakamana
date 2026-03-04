@@ -2,6 +2,9 @@ import React, { Suspense, lazy } from "react";
 import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
 import { AuthProvider } from "./hooks/useAuth";
 import { AdminRoute, PublicRoute } from "./components/common/RouteGuards";
+import { ToastProvider } from "./components/common/Toast";
+import ScrollToTop from "./components/common/ScrollToTop";
+import BackToTop from "./components/common/BackToTop";
 import Navbar from "./components/layout/Navbar";
 import Footer from "./components/layout/Footer";
 
@@ -19,6 +22,7 @@ const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
 const AdminProducts = lazy(() => import("./pages/admin/AdminProducts"));
 const AdminInvoice = lazy(() => import("./pages/admin/AdminInvoice"));
 const AdminInvoices = lazy(() => import("./pages/admin/AdminInvoices"));
+const AdminMessages = lazy(() => import("./pages/admin/AdminMessages"));
 
 function Layout({ children, hideFooter }) {
   return (
@@ -54,7 +58,10 @@ function PageLoader() {
 export default function App() {
   return (
     <AuthProvider>
+      <ToastProvider>
       <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+        <ScrollToTop />
+        <BackToTop />
         {/* ✅ Suspense wraps routes so lazy-loaded pages can load */}
         <Suspense fallback={<Layout><PageLoader /></Layout>}>
           <Routes>
@@ -117,6 +124,16 @@ export default function App() {
                 </AdminRoute>
               }
             />
+            <Route
+              path="/admin/messages"
+              element={
+                <AdminRoute>
+                  <Layout hideFooter>
+                    <AdminMessages />
+                  </Layout>
+                </AdminRoute>
+              }
+            />
 
             {/* ── 404 ── */}
             <Route
@@ -158,6 +175,7 @@ export default function App() {
           </Routes>
         </Suspense>
       </Router>
+      </ToastProvider>
     </AuthProvider>
   );
 }

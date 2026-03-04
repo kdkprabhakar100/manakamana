@@ -5,6 +5,7 @@ export default function ProductsPage() {
   const { products, loading } = useProducts();
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("All");
+  const [selected, setSelected] = useState(null);
 
   const categories = ["All", ...new Set(products.map(p => p.category).filter(Boolean))];
 
@@ -71,7 +72,7 @@ export default function ProductsPage() {
         ) : (
           <div className="products-grid" style={s.grid}>
             {filtered.map(p => (
-              <div key={p.id} style={s.card}>
+              <div key={p.id} style={s.card} onClick={() => setSelected(p)} role="button" tabIndex={0}>
                 <div style={s.imgWrap}>
                   {p.image
                     ? <img src={p.image} alt={p.name} style={s.img} loading="lazy" />
@@ -102,8 +103,9 @@ export default function ProductsPage() {
                     </p>
                   </div>
                   <div className="product-card-actions" style={s.cardActions}>
-                    <a href="tel:+9779851068337" style={s.callBtn}>&#128222; Call Now</a>
-                    <a href="https://wa.me/9779851068337" target="_blank" rel="noreferrer" style={s.waBtn}>&#128172; WhatsApp</a>
+                    <a href="tel:+9779851068337" style={s.callBtn} onClick={e => e.stopPropagation()}>&#128222; Call Now</a>
+                    <a href={`https://wa.me/9779851068337?text=${encodeURIComponent(`Hi, I'm interested in: ${p.name}${p.price ? ` (₹${p.price})` : ""}. Please share details.`)}`}
+                      target="_blank" rel="noreferrer" style={s.waBtn} onClick={e => e.stopPropagation()}>&#128172; WhatsApp</a>
                   </div>
                 </div>
               </div>
@@ -111,6 +113,48 @@ export default function ProductsPage() {
           </div>
         )}
       </div>
+
+      {/* ── Product Detail Modal ── */}
+      {selected && (
+        <div style={s.modalOverlay} onClick={() => setSelected(null)}>
+          <div className="product-modal" style={s.modal} onClick={e => e.stopPropagation()}>
+            <button style={s.modalClose} onClick={() => setSelected(null)}>✕</button>
+            <div className="product-modal-inner" style={s.modalInner}>
+              <div style={s.modalImgWrap}>
+                {selected.image
+                  ? <img src={selected.image} alt={selected.name} style={s.modalImg} />
+                  : <div style={s.modalImgPlaceholder}>⚙️</div>
+                }
+              </div>
+              <div style={s.modalBody}>
+                {selected.category && <span style={s.modalCat}>{selected.category}</span>}
+                <h2 style={s.modalName}>{selected.name}</h2>
+                {selected.description && <p style={s.modalDesc}>{selected.description}</p>}
+                <div style={s.modalMeta}>
+                  {selected.unit && <span style={s.unitTag}>📦 per {selected.unit}</span>}
+                  {selected.quantity !== undefined && (
+                    <span style={{
+                      ...s.stockTag,
+                      ...(selected.quantity < 5 ? s.stockLow : {}),
+                      ...(selected.quantity <= 0 ? { background: "#fef2f2", color: "#dc2626" } : {}),
+                    }}>
+                      {selected.quantity <= 0 ? "Out of Stock" : `${selected.quantity} in stock`}
+                    </span>
+                  )}
+                </div>
+                <div style={s.modalPrice}>
+                  {selected.price ? `₹${Number(selected.price).toLocaleString("en-IN")}` : "Contact for Price"}
+                </div>
+                <div style={s.modalActions}>
+                  <a href={`https://wa.me/9779851068337?text=${encodeURIComponent(`Hi, I'd like to inquire about: ${selected.name}${selected.price ? ` (₹${selected.price})` : ""}. Please share availability and pricing details.`)}`}
+                    target="_blank" rel="noreferrer" style={s.modalWaBtn}>💬 Inquire on WhatsApp</a>
+                  <a href="tel:+9779851068337" style={s.modalCallBtn}>📞 Call Now</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -221,4 +265,22 @@ const s = {
   loadingWrap: { display: "flex", flexDirection: "column", alignItems: "center", gap: 12, padding: 60, color: "#64748b" },
   spinner: { width: 32, height: 32, border: "3px solid #e2e8f0", borderTop: `3px solid ${PRIMARY}`, borderRadius: "50%", animation: "spin 0.8s linear infinite" },
   emptyWrap: { textAlign: "center", padding: 60, color: "#94a3b8" },
+
+  /* Product Detail Modal */
+  modalOverlay: { position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: 20, backdropFilter: "blur(6px)", animation: "fadeIn 0.2s ease" },
+  modal: { background: "#fff", borderRadius: 20, maxWidth: 780, width: "100%", maxHeight: "90vh", overflow: "auto", position: "relative", boxShadow: "0 20px 60px rgba(0,0,0,0.3)", animation: "scaleIn 0.25s ease" },
+  modalClose: { position: "absolute", top: 14, right: 16, background: "#f1f5f9", border: "none", borderRadius: "50%", width: 36, height: 36, fontSize: 16, fontWeight: 700, cursor: "pointer", color: "#475569", zIndex: 1, display: "flex", alignItems: "center", justifyContent: "center" },
+  modalInner: { display: "grid", gridTemplateColumns: "1fr 1fr", minHeight: 300 },
+  modalImgWrap: { background: "#f1f5f9", display: "flex", alignItems: "center", justifyContent: "center", minHeight: 300, borderRadius: "20px 0 0 20px", overflow: "hidden" },
+  modalImg: { width: "100%", height: "100%", objectFit: "cover", minHeight: 300, maxHeight: 450 },
+  modalImgPlaceholder: { fontSize: 72, color: "#94a3b8" },
+  modalBody: { padding: "32px 28px", display: "flex", flexDirection: "column", justifyContent: "center" },
+  modalCat: { display: "inline-block", background: "#fff7ed", color: PRIMARY, fontSize: 11, fontWeight: 700, padding: "4px 12px", borderRadius: 20, marginBottom: 12, letterSpacing: 1, border: "1px solid #fed7aa", alignSelf: "flex-start" },
+  modalName: { fontSize: 24, fontWeight: 800, color: DARK, margin: "0 0 12px", lineHeight: 1.2 },
+  modalDesc: { fontSize: 14, color: "#475569", lineHeight: 1.8, margin: "0 0 16px" },
+  modalMeta: { display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16 },
+  modalPrice: { fontSize: 28, fontWeight: 900, color: PRIMARY, marginBottom: 20 },
+  modalActions: { display: "flex", gap: 10, flexWrap: "wrap" },
+  modalWaBtn: { flex: 1, padding: "12px 20px", borderRadius: 10, background: "#22c55e", color: "#fff", fontSize: 14, fontWeight: 700, textDecoration: "none", textAlign: "center", minWidth: 140 },
+  modalCallBtn: { flex: 1, padding: "12px 20px", borderRadius: 10, border: `2px solid ${DARK}`, color: DARK, fontSize: 14, fontWeight: 700, textDecoration: "none", textAlign: "center", background: "transparent", minWidth: 120 },
 };

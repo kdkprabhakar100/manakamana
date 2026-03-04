@@ -1,6 +1,7 @@
 ﻿import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
+import { useContacts } from "../../hooks/useContacts";
 
 const LINKS = [
   { to: "/", label: "Home" },
@@ -11,6 +12,7 @@ const LINKS = [
 
 export default function Navbar() {
   const { user, isAdmin, logout } = useAuth();
+  const { unreadCount } = useContacts();
   const location = useLocation();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -60,6 +62,13 @@ export default function Navbar() {
               {location.pathname.startsWith("/admin") && <span style={s.linkBar} />}
             </Link>
           )}
+          {isAdmin && (
+            <Link to="/admin/messages" style={{ ...s.link, ...(location.pathname === "/admin/messages" ? s.linkActive : {}), position: "relative" }}>
+              Messages
+              {unreadCount > 0 && <span style={s.unreadBadge}>{unreadCount}</span>}
+              {location.pathname === "/admin/messages" && <span style={s.linkBar} />}
+            </Link>
+          )}
         </div>
 
         <div style={s.authArea}>
@@ -94,6 +103,12 @@ export default function Navbar() {
           ))}
           {isAdmin && (
             <Link to="/admin" style={s.mobileLink} onClick={() => setMenuOpen(false)}>Admin Dashboard</Link>
+          )}
+          {isAdmin && (
+            <Link to="/admin/messages" style={{ ...s.mobileLink, position: "relative", display: "flex", alignItems: "center", gap: 8 }} onClick={() => setMenuOpen(false)}>
+              Messages
+              {unreadCount > 0 && <span style={s.unreadBadgeMobile}>{unreadCount}</span>}
+            </Link>
           )}
           <div style={s.mobileDivider} />
           {user ? (
@@ -184,5 +199,16 @@ const s = {
   mobileLinkBtn: {
     padding: "13px 14px", borderRadius: 10, fontSize: 15, fontWeight: 500,
     color: "#ef4444", background: "none", border: "none", cursor: "pointer", textAlign: "left",
+  },
+  unreadBadge: {
+    position: "absolute", top: 2, right: 2,
+    background: "#ef4444", color: "#fff", fontSize: 10, fontWeight: 800,
+    minWidth: 18, height: 18, borderRadius: 9, display: "flex",
+    alignItems: "center", justifyContent: "center", lineHeight: 1,
+    boxShadow: "0 2px 6px rgba(239,68,68,0.4)",
+  },
+  unreadBadgeMobile: {
+    background: "#ef4444", color: "#fff", fontSize: 11, fontWeight: 800,
+    padding: "2px 8px", borderRadius: 10, lineHeight: 1,
   },
 };

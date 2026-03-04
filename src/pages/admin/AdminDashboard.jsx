@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { useProducts } from "../../hooks/useProducts";
 import { useInvoices } from "../../hooks/useInvoices";
+import { useContacts } from "../../hooks/useContacts";
 
 const PRIMARY = "#ea580c";
 const PRIMARY_LIGHT = "#f97316";
@@ -8,6 +9,7 @@ const PRIMARY_LIGHT = "#f97316";
 export default function AdminDashboard() {
   const { products } = useProducts();
   const { invoices } = useInvoices();
+  const { contacts, unreadCount } = useContacts();
 
   const totalRevenue = invoices.reduce((s, inv) => s + (inv.total || 0), 0);
   const recentInvoices = invoices.slice(0, 5);
@@ -35,12 +37,13 @@ export default function AdminDashboard() {
             { icon:"📦", label:"Total Products",  value: products.length,  color: PRIMARY },
             { icon:"🧾", label:"Total Invoices",   value: invoices.length, color:"#8b5cf6" },
             { icon:"💰", label:"Total Billed",     value:`₹${totalRevenue.toLocaleString("en-IN")}`, color:"#10b981" },
-            { icon:"📋", label:"Pending Estimates", value: invoices.filter(i=>i.docType==="Estimate").length, color:"#f59e0b" },
+            { icon:"✉️", label:"Messages",          value: contacts.length, color: unreadCount > 0 ? "#ef4444" : "#6366f1", sub: unreadCount > 0 ? `${unreadCount} unread` : "All read" },
           ].map(st => (
             <div key={st.label} style={{ ...s.statCard, borderTop: `4px solid ${st.color}` }}>
               <div style={s.statIcon}>{st.icon}</div>
               <div style={{ ...s.statValue, color: st.color }}>{st.value}</div>
               <div style={s.statLabel}>{st.label}</div>
+              {st.sub && <div style={{ fontSize: 11, color: st.color, fontWeight: 600, marginTop: 2 }}>{st.sub}</div>}
             </div>
           ))}
         </div>
@@ -86,11 +89,12 @@ export default function AdminDashboard() {
           <QuickAction to="/admin/products"    icon="📦" title="Manage Products" desc="Add, edit or delete products from catalogue" />
           <QuickAction to="/admin/invoice/new" icon="➕" title="New Invoice"     desc="Create a new estimate or invoice for a client" />
           <QuickAction to="/admin/invoices"    icon="🧾" title="All Invoices"    desc="View and manage all saved invoices" />
+          <QuickAction to="/admin/messages"    icon="✉️" title="Messages"        desc={`View customer inquiries${unreadCount > 0 ? ` (${unreadCount} new)` : ""}`} />
         </div>
 
         {/* Recent invoices */}
         {recentInvoices.length > 0 && (
-          <div style={s.section}>
+          <div style={{ ...s.section, marginBottom: 24 }}>
             <div style={s.sectionHeader}>
               <h2 style={s.sectionTitle}>Recent Invoices</h2>
               <Link to="/admin/invoices" style={s.viewAll}>View All →</Link>
@@ -119,6 +123,35 @@ export default function AdminDashboard() {
                   ))}
                 </tbody>
               </table>
+            </div>
+          </div>
+        )}
+
+        {/* Recent Messages */}
+        {contacts.length > 0 && (
+          <div style={s.section}>
+            <div style={s.sectionHeader}>
+              <h2 style={s.sectionTitle}>Recent Messages</h2>
+              <Link to="/admin/messages" style={s.viewAll}>View All →</Link>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {contacts.slice(0, 4).map(c => (
+                <div key={c.id} style={{ display: "flex", alignItems: "center", gap: 14, padding: "12px 14px", background: c.read ? "#fafaf9" : "#fff7ed", borderRadius: 10, border: c.read ? "1px solid #f1f5f9" : "1px solid #fed7aa" }}>
+                  <div style={{ width: 36, height: 36, borderRadius: "50%", background: c.read ? "#e2e8f0" : "linear-gradient(135deg,#ea580c,#f97316)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, color: c.read ? "#64748b" : "#fff", fontWeight: 700, flexShrink: 0 }}>
+                    {(c.name || "?")[0].toUpperCase()}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <span style={{ fontWeight: 700, fontSize: 13, color: "#0f172a" }}>{c.name}</span>
+                      {!c.read && <span style={{ background: "#ef4444", color: "#fff", fontSize: 9, fontWeight: 800, padding: "2px 6px", borderRadius: 8 }}>NEW</span>}
+                    </div>
+                    <div style={{ fontSize: 12, color: "#64748b", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.message}</div>
+                  </div>
+                  <div style={{ fontSize: 11, color: "#94a3b8", whiteSpace: "nowrap", flexShrink: 0 }}>
+                    {c.createdAt?.toDate ? c.createdAt.toDate().toLocaleDateString("en-IN", { day: "numeric", month: "short" }) : ""}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         )}

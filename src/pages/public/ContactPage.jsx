@@ -1,10 +1,15 @@
 ﻿import { useState } from "react";
+import { useContacts } from "../../hooks/useContacts";
+import { useToast } from "../../components/common/Toast";
 
 export default function ContactPage() {
   const [form, setForm] = useState({ name: "", phone: "", email: "", message: "" });
   const [errors, setErrors] = useState({});
   const [sent, setSent] = useState(false);
   const [touched, setTouched] = useState({});
+  const [submitting, setSubmitting] = useState(false);
+  const { addContact } = useContacts();
+  const toast = useToast();
 
   const validate = () => {
     const errs = {};
@@ -24,13 +29,28 @@ export default function ContactPage() {
     setErrors(validate());
   };
 
-  const handle = (e) => {
+  const handle = async (e) => {
     e.preventDefault();
     const errs = validate();
     setErrors(errs);
     setTouched({ name: true, phone: true, email: true, message: true });
     if (Object.keys(errs).length > 0) return;
-    setSent(true);
+    setSubmitting(true);
+    try {
+      await addContact({
+        name: form.name.trim(),
+        phone: form.phone.trim(),
+        email: form.email.trim(),
+        message: form.message.trim(),
+      });
+      setSent(true);
+      toast.success("Message sent successfully! We'll get back to you soon.");
+    } catch (err) {
+      console.error("Failed to send message:", err);
+      toast.error("Failed to send message. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const fieldError = (field) => touched[field] && errors[field];
@@ -154,7 +174,9 @@ export default function ContactPage() {
                   {fieldError("message") && <span style={s.errMsg}>{errors.message}</span>}
                 </div>
 
-                <button type="submit" style={s.submitBtn}>Send Message &#8594;</button>
+                <button type="submit" style={{ ...s.submitBtn, opacity: submitting ? 0.7 : 1 }} disabled={submitting}>
+                  {submitting ? "Sending…" : "Send Message →"}
+                </button>
                 <p style={s.formNote}>&#128274; Your information is safe and will never be shared.</p>
               </form>
             )}

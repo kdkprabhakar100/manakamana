@@ -3,11 +3,31 @@ import { signInWithEmailAndPassword, signInWithPopup,
   GoogleAuthProvider, signOut, onAuthStateChanged } from "firebase/auth";
 import { auth } from "../firebase/config";
 
-// ─── Hardcoded admin credentials ─────────────────────────────────────────────
-const ADMIN_EMAIL    = "kdkprabhakar100@gmail.com";
-const ADMIN_PASSWORD = "Admin@1234";
+// ─── Admin email (password is NEVER stored client-side) ─────────────────────
+const ADMIN_EMAIL    = import.meta.env.VITE_ADMIN_EMAIL || "kdkprabhakar100@gmail.com";
 const googleProvider = new GoogleAuthProvider();
 const AuthContext = createContext(null);
+
+// ─── Login rate-limiting ─────────────────────────────────────────────────────
+const MAX_LOGIN_ATTEMPTS = 5;
+const LOCKOUT_DURATION   = 5 * 60 * 1000; // 5 minutes
+const ATTEMPT_KEY        = "manakamana_login_attempts";
+const LOCKOUT_KEY        = "manakamana_lockout_until";
+
+function getLoginAttempts() {
+  try { return Number(sessionStorage.getItem(ATTEMPT_KEY) || 0); }
+  catch { return 0; }
+}
+function setLoginAttempts(n) {
+  sessionStorage.setItem(ATTEMPT_KEY, String(n));
+}
+function getLockoutUntil() {
+  try { return Number(sessionStorage.getItem(LOCKOUT_KEY) || 0); }
+  catch { return 0; }
+}
+function setLockoutUntil(ts) {
+  sessionStorage.setItem(LOCKOUT_KEY, String(ts));
+}
 
 // ─── Session config ──────────────────────────────────────────────────────────
 const SESSION_DURATION  = 2 * 60 * 60 * 1000; // 2 hours
@@ -120,8 +140,29 @@ export function AuthProvider({ children }) {
     return () => ACTIVITY_EVENTS.forEach(e => window.removeEventListener(e, throttled));
   }, [isAdmin, user, extendSession]);
 
-  const login = (email, password) =>
-    signInWithEmailAndPassword(auth, email, password);
+  const login = async (email, password) => {
+    // Rate-limiting: check lockout
+    const lockoutUntil = getLockoutUntil();
+    if (lockoutUntil && Date.now() < lockoutUntil) {
+      const remaining = Math.ceil((lockoutUntil - Date.now()) / 60000);
+      throw new Error(`Too many login attempts. Try again in ${remaining} minute(s).`);
+    }
+    try {
+      const result = await signInWithEmailAndPassword(auth, email, password);
+      setLoginAttempts(0); // reset on success
+      sessionStorage.removeItem(LOCKOUT_KEY);
+      return result;
+    } catch (err) {
+      const attempts = getLoginAttempts() + 1;
+      setLoginAttempts(attempts);
+      if (attempts >= MAX_LOGIN_ATTEMPTS) {
+        setLockoutUntil(Date.now() + LOCKOUT_DURATION);
+        setLoginAttempts(0);
+        throw new Error(`Too many failed attempts. Account locked for 5 minutes.`);
+      }
+      throw err;
+    }
+  };
 
   const logout = async () => {
     clearSessionTimers();

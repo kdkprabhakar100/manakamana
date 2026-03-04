@@ -1,8 +1,46 @@
 ﻿/* ===================================================================
-   Manakamana Heavy Equipments - Responsive Overrides
+   Manakamana Heavy Equipments - Responsive & Animation Overrides
    Industrial Theme | Inter Font | Orange + Steel palette
    Uses !important to override inline styles
    =================================================================== */
+
+/* ── Global Transitions ── */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+a, button {
+  transition: transform 0.15s ease, opacity 0.15s ease, box-shadow 0.2s ease !important;
+}
+a:hover, button:hover {
+  transform: translateY(-1px);
+}
+a:active, button:active {
+  transform: translateY(0) scale(0.98);
+}
+
+/* ── Smooth card hover effects ── */
+.products-grid > div,
+.admin-products-grid > div {
+  transition: transform 0.22s ease, box-shadow 0.22s ease !important;
+  cursor: pointer;
+}
+.products-grid > div:hover,
+.admin-products-grid > div:hover {
+  transform: translateY(-4px) !important;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.1), 0 2px 8px rgba(0,0,0,0.06) !important;
+}
+
+/* ── Focus styles for accessibility ── */
+a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+  outline: 2px solid #f97316;
+  outline-offset: 2px;
+}
+
+input:focus, textarea:focus, select:focus {
+  border-color: #f97316 !important;
+  box-shadow: 0 0 0 3px rgba(249,115,22,0.1) !important;
+}
 
 /* -- Tablet & below (768px) ---------------------------------------- */
 @media (max-width: 768px) {
@@ -75,6 +113,16 @@
     gap: 14px !important;
   }
 
+  /* Product Detail Modal */
+  .product-modal {
+    max-width: 100% !important;
+    margin: 10px !important;
+    border-radius: 16px !important;
+  }
+  .product-modal-inner {
+    grid-template-columns: 1fr !important;
+  }
+
   /* Admin Dashboard */
   .admin-header {
     flex-direction: column !important;
@@ -114,6 +162,18 @@
   .admin-invoices-search {
     width: 100% !important;
     max-width: 100% !important;
+  }
+
+  /* Admin Messages */
+  .admin-messages-header {
+    flex-direction: column !important;
+    gap: 12px !important;
+  }
+  .admin-messages-filters {
+    flex-direction: column !important;
+  }
+  .messages-layout {
+    grid-template-columns: 1fr !important;
   }
 
   /* Admin Invoice Editor */
@@ -231,8 +291,70 @@
   }
 }
 
-/* -- Spin animation for loading spinners --------------------------- */
+/* ── Animations ── */
 @keyframes spin {
   0%   { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.92); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes toastIn {
+  from { opacity: 0; transform: translateX(100%); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes toastOut {
+  from { opacity: 1; transform: translateX(0); }
+  to   { opacity: 0; transform: translateX(100%); }
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+/* ── Selection color ── */
+::selection {
+  background: rgba(249,115,22,0.2);
+  color: inherit;
+}
+
+/* ── Scrollbar styling ── */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* ── Smooth scroll for the whole page ── */
+html {
+  scroll-behavior: smooth;
 }
