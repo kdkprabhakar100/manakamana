@@ -78,10 +78,10 @@ export default function ContactPage() {
 
               <div style={s.quickActions}>
                 <a href="https://wa.me/9779851068337" target="_blank" rel="noreferrer" style={s.waBtn}>
-                  \uD83D\uDCAC WhatsApp Us
+                  {"\uD83D\uDCAC"} WhatsApp Us
                 </a>
                 <a href="tel:+9779851068337" style={s.callBtn}>
-                  \uD83D\uDCDE Call Now
+                  {"\uD83D\uDCDE"} Call Now
                 </a>
               </div>
             </div>
@@ -89,7 +89,7 @@ export default function ContactPage() {
             {/* Map placeholder */}
             <div style={s.mapCard}>
               <div style={s.mapPlaceholder}>
-                <span style={s.mapIcon}>\uD83D\uDCCD</span>
+                <span style={s.mapIcon}>{"\uD83D\uDCCD"}</span>
                 <span style={s.mapText}>Kathmandu, Nepal</span>
               </div>
             </div>
