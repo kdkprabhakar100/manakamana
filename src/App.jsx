@@ -1,6 +1,7 @@
 import React, { Suspense, lazy } from "react";
 import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
 import { AuthProvider } from "./hooks/useAuth";
+import { ContactsProvider } from "./hooks/useContacts";
 import { AdminRoute, PublicRoute } from "./components/common/RouteGuards";
 import { ToastProvider } from "./components/common/Toast";
 import ScrollToTop from "./components/common/ScrollToTop";
@@ -42,12 +43,16 @@ function PageLoader() {
         display: "grid",
         placeItems: "center",
         padding: "40px 24px",
-        fontFamily: "'Segoe UI',sans-serif",
+        fontFamily: "'Inter',system-ui,sans-serif",
       }}
     >
       <div style={{ textAlign: "center" }}>
-        <div style={{ fontSize: 40 }}>⏳</div>
-        <div style={{ marginTop: 10, color: "#475569", fontWeight: 600 }}>
+        <div style={{
+          width: 40, height: 40, border: "3px solid #f5f5f5",
+          borderTop: "3px solid #d97706", borderRadius: "50%",
+          animation: "spin 0.8s linear infinite", margin: "0 auto 16px"
+        }} />
+        <div style={{ color: "#737373", fontWeight: 500, fontSize: 14, letterSpacing: 0.5 }}>
           Loading…
         </div>
       </div>
@@ -58,6 +63,7 @@ function PageLoader() {
 export default function App() {
   return (
     <AuthProvider>
+      <ContactsProvider>
       <ToastProvider>
       <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <ScrollToTop />
@@ -176,6 +182,7 @@ export default function App() {
         </Suspense>
       </Router>
       </ToastProvider>
+      </ContactsProvider>
     </AuthProvider>
   );
 }

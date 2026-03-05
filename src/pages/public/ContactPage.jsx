@@ -119,7 +119,7 @@ export default function ContactPage() {
           <div style={s.formCard}>
             {sent ? (
               <div style={s.successMsg}>
-                <div style={s.successCheck}>\u2705</div>
+                <div style={s.successCheck}>{"\u2705"}</div>
                 <h3 style={s.successTitle}>Message Sent Successfully!</h3>
                 <p style={s.successDesc}>Thank you for reaching out. Our team will get back to you within 24 hours.</p>
                 <button style={s.resetBtn} onClick={() => {
@@ -187,107 +187,108 @@ export default function ContactPage() {
   );
 }
 
-const PRIMARY = "#ea580c";
-const DARK = "#0f172a";
-const STEEL = "#1e293b";
+const PRIMARY = "#b45309";
+const ACCENT = "#d97706";
+const DARK = "#0a0a0a";
+const STEEL = "#171717";
 
 const s = {
-  page: { background: "#f8fafc", minHeight: "100vh", fontFamily: "'Inter','Segoe UI',sans-serif" },
+  page: { background: "#fafafa", minHeight: "100vh", fontFamily: "'Inter',system-ui,sans-serif" },
 
   hero: {
-    position: "relative", background: `linear-gradient(135deg, ${DARK} 0%, ${STEEL} 50%, #0c1829 100%)`,
-    padding: "56px 24px 52px", overflow: "hidden",
+    position: "relative", background: DARK,
+    padding: "80px 32px 64px", overflow: "hidden",
   },
   heroOverlay: {
-    position: "absolute", inset: 0, opacity: 0.04,
-    backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 35px, rgba(255,255,255,0.05) 35px, rgba(255,255,255,0.05) 36px)",
+    position: "absolute", inset: 0,
+    background: "radial-gradient(circle at 60% 50%, rgba(217,119,6,0.05) 0%, transparent 50%)",
   },
-  heroInner: { position: "relative", maxWidth: 1100, margin: "0 auto" },
+  heroInner: { position: "relative", maxWidth: 1280, margin: "0 auto" },
   heroBadge: {
-    display: "inline-block", background: "rgba(249,115,22,0.12)", color: "#f97316",
-    fontSize: 11, fontWeight: 700, padding: "6px 16px", borderRadius: 20,
-    letterSpacing: 2, marginBottom: 16, border: "1px solid rgba(249,115,22,0.2)",
+    display: "inline-block", background: "rgba(217,119,6,0.08)", color: "#f59e0b",
+    fontSize: 11, fontWeight: 700, padding: "8px 20px", borderRadius: 100,
+    letterSpacing: 3, marginBottom: 20, border: "1px solid rgba(217,119,6,0.15)",
   },
-  heroTitle: { fontSize: 38, fontWeight: 900, color: "#fff", margin: "0 0 12px", lineHeight: 1.15 },
-  heroDesc: { fontSize: 15, color: "#94a3b8", lineHeight: 1.7, maxWidth: 600, margin: 0 },
+  heroTitle: { fontSize: 48, fontWeight: 800, color: "#fff", margin: "0 0 16px", lineHeight: 1.1, letterSpacing: "-0.03em", fontFamily: "'Space Grotesk','Inter',sans-serif" },
+  heroDesc: { fontSize: 16, color: "#a3a3a3", lineHeight: 1.8, maxWidth: 600, margin: 0 },
 
-  contentWrap: { maxWidth: 1100, margin: "0 auto", padding: "40px 24px 64px" },
-  grid: { display: "grid", gridTemplateColumns: "1fr 1.3fr", gap: 32, alignItems: "start" },
+  contentWrap: { maxWidth: 1280, margin: "0 auto", padding: "48px 32px 80px" },
+  grid: { display: "grid", gridTemplateColumns: "1fr 1.3fr", gap: 36, alignItems: "start" },
 
-  infoSide: { display: "flex", flexDirection: "column", gap: 20 },
+  infoSide: { display: "flex", flexDirection: "column", gap: 24 },
   infoCard: {
-    background: DARK, borderRadius: 20, padding: "32px 28px", color: "#fff",
+    background: DARK, borderRadius: 28, padding: "36px 32px", color: "#fff",
   },
-  infoCardTitle: { fontSize: 20, fontWeight: 800, margin: "0 0 6px", color: "#fff" },
-  infoCardDesc: { fontSize: 13, color: "#94a3b8", margin: "0 0 24px" },
-  contactList: { display: "flex", flexDirection: "column", gap: 18 },
-  contactItem: { display: "flex", gap: 14, alignItems: "flex-start" },
+  infoCardTitle: { fontSize: 22, fontWeight: 700, margin: "0 0 8px", color: "#fff", fontFamily: "'Space Grotesk','Inter',sans-serif" },
+  infoCardDesc: { fontSize: 14, color: "#737373", margin: "0 0 28px" },
+  contactList: { display: "flex", flexDirection: "column", gap: 20 },
+  contactItem: { display: "flex", gap: 16, alignItems: "flex-start" },
   contactIconWrap: {
-    width: 42, height: 42, borderRadius: 12, flexShrink: 0,
-    background: "rgba(249,115,22,0.1)", display: "flex", alignItems: "center", justifyContent: "center",
+    width: 44, height: 44, borderRadius: 14, flexShrink: 0,
+    background: "rgba(217,119,6,0.08)", display: "flex", alignItems: "center", justifyContent: "center",
     fontSize: 18,
   },
-  contactLabel: { fontSize: 11, fontWeight: 700, color: "#f97316", textTransform: "uppercase", letterSpacing: 1, marginBottom: 3 },
-  contactDetail: { fontSize: 14, color: "#cbd5e1", lineHeight: 1.5, whiteSpace: "pre-line" },
-  divider: { height: 1, background: "rgba(255,255,255,0.08)", margin: "24px 0" },
+  contactLabel: { fontSize: 11, fontWeight: 700, color: "#d97706", textTransform: "uppercase", letterSpacing: 2, marginBottom: 4 },
+  contactDetail: { fontSize: 15, color: "#d4d4d4", lineHeight: 1.6, whiteSpace: "pre-line" },
+  divider: { height: 1, background: "rgba(255,255,255,0.06)", margin: "28px 0" },
   quickActions: { display: "flex", gap: 10 },
   waBtn: {
-    flex: 1, padding: "12px", background: "#22c55e", color: "#fff", borderRadius: 10,
+    flex: 1, padding: "14px", background: "#22c55e", color: "#fff", borderRadius: 14,
     textAlign: "center", textDecoration: "none", fontSize: 13, fontWeight: 700,
   },
   callBtn: {
-    flex: 1, padding: "12px", background: "rgba(255,255,255,0.08)", color: "#fff",
-    borderRadius: 10, textAlign: "center", textDecoration: "none", fontSize: 13, fontWeight: 700,
-    border: "1px solid rgba(255,255,255,0.1)",
+    flex: 1, padding: "14px", background: "rgba(255,255,255,0.04)", color: "#fff",
+    borderRadius: 14, textAlign: "center", textDecoration: "none", fontSize: 13, fontWeight: 700,
+    border: "1px solid rgba(255,255,255,0.08)",
   },
 
   mapCard: {
-    borderRadius: 16, overflow: "hidden", border: "1px solid #e2e8f0",
-    boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
+    borderRadius: 20, overflow: "hidden", border: "1px solid #e5e5e5",
   },
   mapPlaceholder: {
-    background: STEEL, height: 140, display: "flex", alignItems: "center",
-    justifyContent: "center", gap: 8, flexDirection: "column",
+    background: STEEL, height: 160, display: "flex", alignItems: "center",
+    justifyContent: "center", gap: 10, flexDirection: "column",
   },
   mapIcon: { fontSize: 28 },
-  mapText: { fontSize: 13, color: "#94a3b8", fontWeight: 600 },
+  mapText: { fontSize: 13, color: "#737373", fontWeight: 600 },
 
   formCard: {
-    background: "#fff", borderRadius: 20, padding: "36px 32px",
-    boxShadow: "0 1px 4px rgba(0,0,0,0.04), 0 8px 32px rgba(0,0,0,0.08)",
-    border: "1px solid #f1f5f9",
+    background: "#fff", borderRadius: 28, padding: "44px 36px",
+    boxShadow: "0 1px 3px rgba(0,0,0,0.04), 0 8px 40px rgba(0,0,0,0.06)",
+    border: "1px solid #f5f5f5",
   },
-  formHeader: { marginBottom: 24 },
-  formTitle: { fontSize: 22, fontWeight: 800, color: DARK, margin: "0 0 6px" },
-  formDesc: { fontSize: 14, color: "#64748b", margin: 0 },
-  field: { marginBottom: 18 },
-  fieldRow: { display: "flex", gap: 14 },
-  fieldLabel: { display: "block", fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 7 },
-  req: { color: "#ef4444", fontWeight: 700 },
+  formHeader: { marginBottom: 32 },
+  formTitle: { fontSize: 24, fontWeight: 800, color: DARK, margin: "0 0 8px", fontFamily: "'Space Grotesk','Inter',sans-serif" },
+  formDesc: { fontSize: 15, color: "#737373", margin: 0 },
+  field: { marginBottom: 22 },
+  fieldRow: { display: "flex", gap: 16 },
+  fieldLabel: { display: "block", fontSize: 13, fontWeight: 600, color: "#262626", marginBottom: 8, letterSpacing: 0.3 },
+  req: { color: "#dc2626", fontWeight: 700 },
   input: {
-    width: "100%", padding: "12px 14px", borderRadius: 10,
-    border: "1.5px solid #e2e8f0", fontSize: 14, color: DARK,
-    boxSizing: "border-box", outline: "none", background: "#f8fafc",
-    transition: "border-color 0.2s ease",
+    width: "100%", padding: "14px 16px", borderRadius: 14,
+    border: "1.5px solid #e5e5e5", fontSize: 15, color: DARK,
+    boxSizing: "border-box", outline: "none", background: "#fafafa",
+    transition: "all 0.3s cubic-bezier(0.16,1,0.3,1)",
   },
-  inputErr: { borderColor: "#ef4444", background: "#fef2f2" },
-  textarea: { height: 130, resize: "vertical" },
-  errMsg: { display: "block", fontSize: 12, color: "#ef4444", marginTop: 5, fontWeight: 500 },
+  inputErr: { borderColor: "#dc2626", background: "#fef2f2" },
+  textarea: { height: 140, resize: "vertical" },
+  errMsg: { display: "block", fontSize: 12, color: "#dc2626", marginTop: 6, fontWeight: 500 },
   submitBtn: {
-    width: "100%", padding: "14px",
-    background: `linear-gradient(135deg, ${PRIMARY}, #f97316)`,
-    color: "#fff", borderRadius: 10, border: "none", fontSize: 15, fontWeight: 700,
-    cursor: "pointer", marginTop: 6,
-    boxShadow: "0 4px 16px rgba(249,115,22,0.25)",
+    width: "100%", padding: "16px",
+    background: DARK,
+    color: "#fff", borderRadius: 14, border: "none", fontSize: 15, fontWeight: 600,
+    cursor: "pointer", marginTop: 8,
+    letterSpacing: 0.3,
+    boxShadow: "0 4px 20px rgba(0,0,0,0.12)",
   },
-  formNote: { fontSize: 12, color: "#94a3b8", textAlign: "center", marginTop: 14, marginBottom: 0 },
+  formNote: { fontSize: 12, color: "#a3a3a3", textAlign: "center", marginTop: 16, marginBottom: 0 },
 
-  successMsg: { textAlign: "center", padding: "48px 0" },
-  successCheck: { fontSize: 52, marginBottom: 8 },
-  successTitle: { color: DARK, margin: "0 0 8px", fontSize: 22, fontWeight: 800 },
-  successDesc: { color: "#64748b", fontSize: 14, margin: "0 0 24px", lineHeight: 1.6 },
+  successMsg: { textAlign: "center", padding: "60px 0" },
+  successCheck: { fontSize: 52, marginBottom: 10 },
+  successTitle: { color: DARK, margin: "0 0 10px", fontSize: 24, fontWeight: 800, fontFamily: "'Space Grotesk','Inter',sans-serif" },
+  successDesc: { color: "#737373", fontSize: 15, margin: "0 0 28px", lineHeight: 1.7 },
   resetBtn: {
-    padding: "12px 28px", background: "#f1f5f9", color: "#475569",
-    borderRadius: 10, border: "none", cursor: "pointer", fontWeight: 600, fontSize: 14,
+    padding: "14px 32px", background: "#fafafa", color: "#525252",
+    borderRadius: 14, border: "1px solid #e5e5e5", cursor: "pointer", fontWeight: 600, fontSize: 14,
   },
 };

@@ -1,45 +1,44 @@
 ﻿/* ===================================================================
-   Manakamana Heavy Equipments - Responsive & Animation Overrides
-   Industrial Theme | Inter Font | Orange + Steel palette
-   Uses !important to override inline styles
+   Manakamana Heavy Equipments - Premium Enterprise CSS
+   Inspired by Apple, Tesla, Stripe — Clean, Bold, Cinematic
    =================================================================== */
 
-/* ── Global Transitions ── */
+/* ── Premium Global Transitions ── */
 * {
   -webkit-tap-highlight-color: transparent;
 }
 
 a, button {
-  transition: transform 0.15s ease, opacity 0.15s ease, box-shadow 0.2s ease !important;
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 a:hover, button:hover {
-  transform: translateY(-1px);
+  transform: translateY(-2px);
 }
 a:active, button:active {
   transform: translateY(0) scale(0.98);
 }
 
-/* ── Smooth card hover effects ── */
+/* ── Premium card hover effects ── */
 .products-grid > div,
 .admin-products-grid > div {
-  transition: transform 0.22s ease, box-shadow 0.22s ease !important;
+  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.5s cubic-bezier(0.16, 1, 0.3, 1) !important;
   cursor: pointer;
 }
 .products-grid > div:hover,
 .admin-products-grid > div:hover {
-  transform: translateY(-4px) !important;
-  box-shadow: 0 8px 30px rgba(0,0,0,0.1), 0 2px 8px rgba(0,0,0,0.06) !important;
+  transform: translateY(-8px) scale(1.01) !important;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.12), 0 4px 20px rgba(0,0,0,0.08) !important;
 }
 
 /* ── Focus styles for accessibility ── */
 a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
-  outline: 2px solid #f97316;
-  outline-offset: 2px;
+  outline: 2px solid #d97706;
+  outline-offset: 3px;
 }
 
 input:focus, textarea:focus, select:focus {
-  border-color: #f97316 !important;
-  box-shadow: 0 0 0 3px rgba(249,115,22,0.1) !important;
+  border-color: #d97706 !important;
+  box-shadow: 0 0 0 4px rgba(217,119,6,0.08) !important;
 }
 
 /* -- Tablet & below (768px) ---------------------------------------- */
@@ -57,8 +56,8 @@ input:focus, textarea:focus, select:focus {
     gap: 32px !important;
     text-align: center;
   }
-  .hero-title  { font-size: 32px !important; }
-  .hero-desc   { font-size: 15px !important; margin-left: auto; margin-right: auto; }
+  .hero-title  { font-size: 36px !important; letter-spacing: -0.03em !important; }
+  .hero-desc   { font-size: 16px !important; margin-left: auto; margin-right: auto; }
   .hero-badge  { font-size: 11px !important; }
   .hero-btns   { justify-content: center !important; flex-wrap: wrap !important; }
   .hero-trust  { justify-content: center !important; }
@@ -291,7 +290,7 @@ input:focus, textarea:focus, select:focus {
   }
 }
 
-/* ── Animations ── */
+/* ── Premium Animations ── */
 @keyframes spin {
   0%   { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
@@ -303,58 +302,74 @@ input:focus, textarea:focus, select:focus {
 }
 
 @keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(16px); }
+  from { opacity: 0; transform: translateY(30px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes scaleIn {
-  from { opacity: 0; transform: scale(0.92); }
+  from { opacity: 0; transform: scale(0.94); }
   to   { opacity: 1; transform: scale(1); }
 }
 
 @keyframes toastIn {
-  from { opacity: 0; transform: translateX(100%); }
-  to   { opacity: 1; transform: translateX(0); }
+  from { opacity: 0; transform: translate3d(100%, 0, 0); }
+  to   { opacity: 1; transform: translate3d(0, 0, 0); }
 }
 
 @keyframes toastOut {
-  from { opacity: 1; transform: translateX(0); }
-  to   { opacity: 0; transform: translateX(100%); }
+  from { opacity: 1; transform: translate3d(0, 0, 0); }
+  to   { opacity: 0; transform: translate3d(100%, 0, 0); }
 }
 
 @keyframes slideDown {
-  from { opacity: 0; transform: translateY(-8px); }
+  from { opacity: 0; transform: translateY(-12px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes pulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.05); }
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.05); opacity: 0.85; }
+}
+
+@keyframes gradientMove {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
 }
 
 /* ── Selection color ── */
 ::selection {
-  background: rgba(249,115,22,0.2);
+  background: rgba(217,119,6,0.25);
   color: inherit;
 }
 
-/* ── Scrollbar styling ── */
+/* ── Premium Scrollbar ── */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 4px;
+  background: rgba(0,0,0,0.15);
+  border-radius: 10px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: rgba(0,0,0,0.25);
 }
 
 /* ── Smooth scroll for the whole page ── */
 html {
   scroll-behavior: smooth;
+}
+
+/* ── Smooth page transitions ── */
+main {
+  animation: fadeIn 0.4s ease-out;
 }

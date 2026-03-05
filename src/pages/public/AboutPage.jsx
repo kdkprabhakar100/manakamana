@@ -138,102 +138,101 @@
   );
 }
 
-const PRIMARY = "#ea580c";
-const DARK = "#0f172a";
-const STEEL = "#1e293b";
+const PRIMARY = "#b45309";
+const ACCENT = "#d97706";
+const DARK = "#0a0a0a";
+const STEEL = "#171717";
 
 const s = {
-  page: { background: "#f8fafc", minHeight: "100vh", fontFamily: "'Inter','Segoe UI',sans-serif" },
+  page: { background: "#fff", minHeight: "100vh", fontFamily: "'Inter',system-ui,sans-serif" },
 
   /* Hero */
   hero: {
-    position: "relative", background: `linear-gradient(135deg, ${DARK} 0%, ${STEEL} 50%, #0c1829 100%)`,
-    padding: "72px 24px 64px", overflow: "hidden",
+    position: "relative", background: DARK,
+    padding: "100px 32px 80px", overflow: "hidden",
   },
   heroOverlay: {
-    position: "absolute", inset: 0, opacity: 0.04,
-    backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 35px, rgba(255,255,255,0.05) 35px, rgba(255,255,255,0.05) 36px)",
+    position: "absolute", inset: 0,
+    background: "radial-gradient(circle at 30% 70%, rgba(217,119,6,0.06) 0%, transparent 50%)",
   },
-  heroInner: { position: "relative", maxWidth: 1100, margin: "0 auto" },
+  heroInner: { position: "relative", maxWidth: 1280, margin: "0 auto" },
   heroBadge: {
-    display: "inline-block", background: "rgba(249,115,22,0.12)", color: "#f97316",
-    fontSize: 11, fontWeight: 700, padding: "6px 16px", borderRadius: 20,
-    letterSpacing: 2, marginBottom: 20, border: "1px solid rgba(249,115,22,0.2)",
+    display: "inline-block", background: "rgba(217,119,6,0.08)", color: "#f59e0b",
+    fontSize: 11, fontWeight: 700, padding: "8px 20px", borderRadius: 100,
+    letterSpacing: 3, marginBottom: 24, border: "1px solid rgba(217,119,6,0.15)",
   },
-  heroTitle: { fontSize: 42, fontWeight: 900, color: "#fff", margin: "0 0 16px", lineHeight: 1.15, maxWidth: 600 },
-  heroDesc: { fontSize: 16, color: "#94a3b8", lineHeight: 1.7, maxWidth: 640, margin: "0 0 40px" },
-  heroStats: { display: "flex", gap: 32, flexWrap: "wrap" },
+  heroTitle: { fontSize: 52, fontWeight: 800, color: "#fff", margin: "0 0 20px", lineHeight: 1.1, maxWidth: 650, letterSpacing: "-0.03em", fontFamily: "'Space Grotesk','Inter',sans-serif" },
+  heroDesc: { fontSize: 17, color: "#a3a3a3", lineHeight: 1.8, maxWidth: 640, margin: "0 0 48px" },
+  heroStats: { display: "flex", gap: 20, flexWrap: "wrap" },
   heroStat: {
-    background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)",
-    borderRadius: 14, padding: "20px 28px", minWidth: 130, textAlign: "center",
+    background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)",
+    borderRadius: 20, padding: "24px 32px", minWidth: 140, textAlign: "center",
   },
-  heroStatNum: { fontSize: 32, fontWeight: 900, color: "#f97316", letterSpacing: -1 },
-  heroStatLabel: { fontSize: 11, color: "#94a3b8", fontWeight: 600, marginTop: 4 },
+  heroStatNum: { fontSize: 36, fontWeight: 800, color: "#f59e0b", letterSpacing: -1, fontFamily: "'Space Grotesk','Inter',sans-serif" },
+  heroStatLabel: { fontSize: 11, color: "#737373", fontWeight: 600, marginTop: 6, letterSpacing: 1, textTransform: "uppercase" },
 
   /* Sections */
-  section: { padding: "64px 24px" },
-  darkSection: { background: DARK, padding: "64px 24px" },
-  sectionInner: { maxWidth: 1100, margin: "0 auto" },
+  section: { padding: "100px 32px" },
+  darkSection: { background: DARK, padding: "100px 32px" },
+  sectionInner: { maxWidth: 1280, margin: "0 auto" },
   sectionBadge: {
-    display: "inline-block", background: "#fff7ed", color: PRIMARY, fontSize: 11,
-    fontWeight: 700, padding: "5px 14px", borderRadius: 20, letterSpacing: 2,
-    marginBottom: 12, border: "1px solid #fed7aa",
+    display: "inline-block", background: "#fffbeb", color: PRIMARY, fontSize: 11,
+    fontWeight: 700, padding: "6px 18px", borderRadius: 100, letterSpacing: 3,
+    marginBottom: 16, border: "1px solid #fde68a",
   },
   sectionBadgeDark: {
-    display: "inline-block", background: "rgba(249,115,22,0.1)", color: "#f97316",
-    fontSize: 11, fontWeight: 700, padding: "5px 14px", borderRadius: 20,
-    letterSpacing: 2, marginBottom: 12, border: "1px solid rgba(249,115,22,0.2)",
+    display: "inline-block", background: "rgba(217,119,6,0.08)", color: "#f59e0b",
+    fontSize: 11, fontWeight: 700, padding: "6px 18px", borderRadius: 100,
+    letterSpacing: 3, marginBottom: 16, border: "1px solid rgba(217,119,6,0.15)",
   },
-  h2: { fontSize: 28, fontWeight: 800, color: DARK, margin: "0 0 20px" },
-  darkH2: { fontSize: 28, fontWeight: 800, color: "#fff", margin: "0" },
-  p: { fontSize: 15, color: "#475569", lineHeight: 1.8, margin: "0 0 14px" },
+  h2: { fontSize: 36, fontWeight: 800, color: DARK, margin: "0 0 28px", letterSpacing: "-0.02em", fontFamily: "'Space Grotesk','Inter',sans-serif" },
+  darkH2: { fontSize: 36, fontWeight: 800, color: "#fff", margin: "0", letterSpacing: "-0.02em", fontFamily: "'Space Grotesk','Inter',sans-serif" },
+  p: { fontSize: 16, color: "#525252", lineHeight: 1.9, margin: "0 0 16px" },
 
   /* Story Grid */
-  storyGrid: { display: "grid", gridTemplateColumns: "1.3fr 1fr", gap: 48, alignItems: "start" },
+  storyGrid: { display: "grid", gridTemplateColumns: "1.3fr 1fr", gap: 60, alignItems: "start" },
   missionCard: {
-    background: "linear-gradient(135deg, #ea580c, #c2410c)", borderRadius: 20, padding: "36px 28px",
+    background: DARK, borderRadius: 28, padding: "44px 32px",
     color: "#fff",
   },
-  missionIcon: { fontSize: 28, marginBottom: 8 },
-  missionTitle: { fontSize: 18, fontWeight: 800, margin: "0 0 8px", color: "#fff" },
-  missionDesc: { fontSize: 14, lineHeight: 1.7, margin: 0, color: "rgba(255,255,255,0.85)" },
-  missionDivider: { height: 1, background: "rgba(255,255,255,0.2)", margin: "24px 0" },
+  missionIcon: { fontSize: 28, marginBottom: 10 },
+  missionTitle: { fontSize: 20, fontWeight: 700, margin: "0 0 10px", color: "#fff", fontFamily: "'Space Grotesk','Inter',sans-serif" },
+  missionDesc: { fontSize: 15, lineHeight: 1.8, margin: 0, color: "#a3a3a3" },
+  missionDivider: { height: 1, background: "rgba(255,255,255,0.06)", margin: "28px 0" },
 
   /* Why Cards */
-  whyGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px,1fr))", gap: 20 },
+  whyGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px,1fr))", gap: 24 },
   whyCard: {
-    background: STEEL, borderRadius: 16, padding: "28px 22px",
+    background: "rgba(255,255,255,0.03)", borderRadius: 24, padding: "32px 24px",
     border: "1px solid rgba(255,255,255,0.06)",
   },
   whyIconWrap: {
-    fontSize: 24, marginBottom: 12, width: 48, height: 48, borderRadius: 12,
-    background: "rgba(249,115,22,0.1)", display: "flex", alignItems: "center", justifyContent: "center",
-    color: "#f97316",
+    fontSize: 24, marginBottom: 16, width: 52, height: 52, borderRadius: 16,
+    background: "rgba(217,119,6,0.08)", display: "flex", alignItems: "center", justifyContent: "center",
+    color: "#f59e0b",
   },
-  whyTitle: { fontSize: 16, fontWeight: 700, color: "#fff", margin: "0 0 8px" },
-  whyDesc: { fontSize: 13, color: "#94a3b8", lineHeight: 1.7, margin: 0 },
+  whyTitle: { fontSize: 17, fontWeight: 700, color: "#fff", margin: "0 0 10px" },
+  whyDesc: { fontSize: 14, color: "#a3a3a3", lineHeight: 1.8, margin: 0 },
 
   /* Brands */
   brandsGrid: {
     display: "flex", flexWrap: "wrap", gap: 12, justifyContent: "center",
   },
   brandChip: {
-    background: "#fff", border: "1px solid #e2e8f0", borderRadius: 10,
-    padding: "12px 24px", fontSize: 14, fontWeight: 700, color: DARK,
-    boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
+    background: "#fafafa", border: "1px solid #f5f5f5", borderRadius: 100,
+    padding: "14px 28px", fontSize: 14, fontWeight: 700, color: DARK,
   },
 
   /* Process */
-  processGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(230px,1fr))", gap: 20 },
+  processGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px,1fr))", gap: 24 },
   processCard: {
-    background: "#fff", borderRadius: 16, padding: "28px 22px",
-    boxShadow: "0 1px 4px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.04)",
-    border: "1px solid #f1f5f9", position: "relative",
+    background: "#fafafa", borderRadius: 24, padding: "36px 24px",
+    border: "1px solid #f5f5f5", position: "relative",
   },
   processStep: {
-    fontSize: 32, fontWeight: 900, color: "rgba(234,88,12,0.12)",
-    marginBottom: 8, letterSpacing: -1,
+    fontSize: 36, fontWeight: 800, color: "rgba(217,119,6,0.08)",
+    marginBottom: 10, letterSpacing: -1, fontFamily: "'Space Grotesk','Inter',sans-serif",
   },
-  processTitle: { fontSize: 16, fontWeight: 700, color: DARK, margin: "0 0 8px" },
-  processDesc: { fontSize: 13, color: "#64748b", lineHeight: 1.7, margin: 0 },
+  processTitle: { fontSize: 17, fontWeight: 700, color: DARK, margin: "0 0 10px" },
+  processDesc: { fontSize: 14, color: "#737373", lineHeight: 1.8, margin: 0 },
 };

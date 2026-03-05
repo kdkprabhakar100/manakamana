@@ -114,13 +114,13 @@ export default function Navbar() {
           {user ? (
             <>
               {isAdmin && (
-                <Link to="/admin/invoice/new" style={{ ...s.mobileLink, color: "#f97316", fontWeight: 700 }}
+                <Link to="/admin/invoice/new" style={{ ...s.mobileLink, color: "#b45309", fontWeight: 700 }}
                   onClick={() => setMenuOpen(false)}>+ New Invoice</Link>
               )}
               <button onClick={handleLogout} style={s.mobileLinkBtn}>Logout</button>
             </>
           ) : (
-            <Link to="/login" style={{ ...s.mobileLink, color: "#f97316", fontWeight: 700 }}
+            <Link to="/login" style={{ ...s.mobileLink, color: "#b45309", fontWeight: 700 }}
               onClick={() => setMenuOpen(false)}>Admin Login</Link>
           )}
         </div>
@@ -129,86 +129,101 @@ export default function Navbar() {
   );
 }
 
-const PRIMARY = "#ea580c";
-const DARK = "#0f172a";
+const PRIMARY = "#b45309";
+const ACCENT = "#d97706";
+const DARK = "#0a0a0a";
 
 const s = {
   nav: {
     position: "sticky", top: 0, zIndex: 100,
-    background: "rgba(15,23,42,0.97)",
-    backdropFilter: "blur(16px)",
-    transition: "all 0.3s ease",
+    background: "rgba(255,255,255,0.72)",
+    backdropFilter: "blur(24px) saturate(180%)",
+    WebkitBackdropFilter: "blur(24px) saturate(180%)",
+    borderBottom: "1px solid rgba(0,0,0,0.06)",
+    transition: "all 0.4s cubic-bezier(0.16,1,0.3,1)",
   },
-  navScrolled: { boxShadow: "0 4px 24px rgba(0,0,0,0.3)" },
-  topStripe: { height: 3, background: "linear-gradient(90deg, #ea580c, #f97316, #fbbf24, #f97316, #ea580c)" },
+  navScrolled: {
+    boxShadow: "0 1px 40px rgba(0,0,0,0.06)",
+    background: "rgba(255,255,255,0.85)",
+  },
+  topStripe: {
+    height: 2,
+    background: "linear-gradient(90deg, #92400e, #b45309, #d97706, #f59e0b, #d97706, #b45309, #92400e)",
+    backgroundSize: "200% 100%",
+    animation: "gradientMove 4s ease infinite",
+  },
   inner: {
-    maxWidth: 1200, margin: "0 auto", padding: "0 24px",
+    maxWidth: 1280, margin: "0 auto", padding: "0 32px",
     height: 72, display: "flex", alignItems: "center",
-    justifyContent: "space-between", gap: 16,
+    justifyContent: "space-between", gap: 20,
   },
-  logo: { display: "flex", alignItems: "center", gap: 12, textDecoration: "none", flexShrink: 0 },
+  logo: { display: "flex", alignItems: "center", gap: 14, textDecoration: "none", flexShrink: 0 },
   logoIcon: {
-    width: 44, height: 44, borderRadius: 10,
-    background: "linear-gradient(135deg, #ea580c, #f97316)",
+    width: 42, height: 42, borderRadius: 12,
+    background: "linear-gradient(135deg, #92400e, #b45309)",
     display: "flex", alignItems: "center", justifyContent: "center",
-    boxShadow: "0 2px 12px rgba(249,115,22,0.4)",
+    boxShadow: "0 4px 16px rgba(180,83,9,0.25)",
   },
-  logoGear: { fontSize: 22 },
-  logoName: { fontSize: 17, fontWeight: 900, color: "#fff", lineHeight: 1.2, letterSpacing: 1.5 },
-  logoSub: { fontSize: 9, color: "#f97316", lineHeight: 1.2, fontWeight: 700, letterSpacing: 2 },
-  links: { display: "flex", alignItems: "center", gap: 2, flex: 1, justifyContent: "center" },
+  logoGear: { fontSize: 20 },
+  logoName: { fontSize: 15, fontWeight: 800, color: DARK, lineHeight: 1.2, letterSpacing: 2, fontFamily: "'Space Grotesk','Inter',sans-serif" },
+  logoSub: { fontSize: 8, color: ACCENT, lineHeight: 1.2, fontWeight: 700, letterSpacing: 3, textTransform: "uppercase" },
+  links: { display: "flex", alignItems: "center", gap: 4, flex: 1, justifyContent: "center" },
   link: {
-    position: "relative", padding: "8px 18px", borderRadius: 8, fontSize: 14, fontWeight: 500,
-    color: "#94a3b8", textDecoration: "none", transition: "all 0.2s ease",
+    position: "relative", padding: "8px 20px", borderRadius: 100, fontSize: 14, fontWeight: 500,
+    color: "#525252", textDecoration: "none", transition: "all 0.3s ease",
     display: "flex", flexDirection: "column", alignItems: "center", gap: 2,
   },
-  linkActive: { color: "#f97316", fontWeight: 700 },
+  linkActive: { color: DARK, fontWeight: 600, background: "rgba(0,0,0,0.04)" },
   linkBar: {
-    position: "absolute", bottom: 0, left: "50%", transform: "translateX(-50%)",
-    width: 20, height: 3, borderRadius: 2,
-    background: "linear-gradient(90deg, #ea580c, #f97316)",
+    position: "absolute", bottom: 2, left: "50%", transform: "translateX(-50%)",
+    width: 4, height: 4, borderRadius: "50%",
+    background: ACCENT,
   },
   authArea: { display: "flex", alignItems: "center", gap: 10, flexShrink: 0 },
   ctaBtn: {
-    background: "linear-gradient(135deg, #ea580c, #f97316)", color: "#fff",
-    padding: "9px 20px", borderRadius: 8, fontSize: 13, fontWeight: 700,
+    background: DARK, color: "#fff",
+    padding: "10px 22px", borderRadius: 100, fontSize: 13, fontWeight: 600,
     textDecoration: "none", border: "none", cursor: "pointer",
-    boxShadow: "0 2px 12px rgba(249,115,22,0.3)",
+    letterSpacing: 0.3,
+    boxShadow: "0 2px 8px rgba(0,0,0,0.12)",
   },
   logoutBtn: {
-    background: "rgba(255,255,255,0.08)", color: "#94a3b8", padding: "9px 16px",
-    borderRadius: 8, fontSize: 13, fontWeight: 600, border: "1px solid rgba(255,255,255,0.1)",
+    background: "transparent", color: "#737373", padding: "10px 18px",
+    borderRadius: 100, fontSize: 13, fontWeight: 500, border: "1px solid #e5e5e5",
     cursor: "pointer",
   },
   hamburger: {
     display: "none", flexDirection: "column", gap: 5,
     background: "none", border: "none", cursor: "pointer", padding: 6,
   },
-  bar: { display: "block", width: 22, height: 2.5, background: "#94a3b8", borderRadius: 2, transition: "all 0.3s ease" },
+  bar: { display: "block", width: 20, height: 2, background: "#525252", borderRadius: 2, transition: "all 0.3s ease" },
   mobileMenu: {
-    background: DARK, borderTop: "1px solid rgba(255,255,255,0.06)",
-    padding: "8px 24px 16px", display: "flex", flexDirection: "column", gap: 2,
-    boxShadow: "0 12px 24px rgba(0,0,0,0.3)",
+    background: "rgba(255,255,255,0.95)", backdropFilter: "blur(24px)",
+    WebkitBackdropFilter: "blur(24px)",
+    borderTop: "1px solid rgba(0,0,0,0.04)",
+    padding: "10px 24px 20px", display: "flex", flexDirection: "column", gap: 2,
+    boxShadow: "0 20px 60px rgba(0,0,0,0.08)",
+    animation: "slideDown 0.3s cubic-bezier(0.16,1,0.3,1)",
   },
   mobileLink: {
-    padding: "13px 14px", borderRadius: 10, fontSize: 15, fontWeight: 500,
-    color: "#94a3b8", textDecoration: "none",
+    padding: "14px 16px", borderRadius: 12, fontSize: 15, fontWeight: 500,
+    color: "#525252", textDecoration: "none",
   },
-  mobileLinkActive: { background: "rgba(249,115,22,0.1)", color: "#f97316", fontWeight: 700 },
-  mobileDivider: { height: 1, background: "rgba(255,255,255,0.06)", margin: "6px 0" },
+  mobileLinkActive: { background: "rgba(217,119,6,0.06)", color: DARK, fontWeight: 600 },
+  mobileDivider: { height: 1, background: "rgba(0,0,0,0.04)", margin: "8px 0" },
   mobileLinkBtn: {
-    padding: "13px 14px", borderRadius: 10, fontSize: 15, fontWeight: 500,
-    color: "#ef4444", background: "none", border: "none", cursor: "pointer", textAlign: "left",
+    padding: "14px 16px", borderRadius: 12, fontSize: 15, fontWeight: 500,
+    color: "#dc2626", background: "none", border: "none", cursor: "pointer", textAlign: "left",
   },
   unreadBadge: {
     position: "absolute", top: 2, right: 2,
-    background: "#ef4444", color: "#fff", fontSize: 10, fontWeight: 800,
+    background: "#dc2626", color: "#fff", fontSize: 10, fontWeight: 800,
     minWidth: 18, height: 18, borderRadius: 9, display: "flex",
     alignItems: "center", justifyContent: "center", lineHeight: 1,
-    boxShadow: "0 2px 6px rgba(239,68,68,0.4)",
+    boxShadow: "0 2px 8px rgba(220,38,38,0.4)",
   },
   unreadBadgeMobile: {
-    background: "#ef4444", color: "#fff", fontSize: 11, fontWeight: 800,
+    background: "#dc2626", color: "#fff", fontSize: 11, fontWeight: 800,
     padding: "2px 8px", borderRadius: 10, lineHeight: 1,
   },
 };

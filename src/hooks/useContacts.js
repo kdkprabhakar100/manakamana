@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, createContext, useContext, createElement } from "react";
 import {
   collection, onSnapshot, addDoc, updateDoc,
   deleteDoc, doc, serverTimestamp,
@@ -21,7 +21,10 @@ function firebaseReady() {
   catch { return false; }
 }
 
-export function useContacts() {
+/* ── Shared Context so every component sees the same contacts state ── */
+const ContactsContext = createContext(null);
+
+export function ContactsProvider({ children }) {
   const [contacts, setContacts] = useState([]);
   const [loading,  setLoading]  = useState(true);
   const [useLocal, setUseLocal] = useState(false);
@@ -113,5 +116,13 @@ export function useContacts() {
 
   const unreadCount = contacts.filter(c => !c.read).length;
 
-  return { contacts, loading, addContact, markRead, deleteContact, unreadCount, useLocal };
+  const value = { contacts, loading, addContact, markRead, deleteContact, unreadCount, useLocal };
+
+  return createElement(ContactsContext.Provider, { value }, children);
+}
+
+export function useContacts() {
+  const ctx = useContext(ContactsContext);
+  if (!ctx) throw new Error("useContacts must be used within <ContactsProvider>");
+  return ctx;
 }

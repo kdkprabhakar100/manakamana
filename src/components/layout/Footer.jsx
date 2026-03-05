@@ -102,73 +102,78 @@ export default function Footer() {
   );
 }
 
-const DARK = "#0f172a";
-const DARKER = "#020617";
+const DARK = "#0a0a0a";
+const DARKER = "#000000";
 
 const s = {
-  footer: { background: DARK, color: "#cbd5e1", marginTop: "auto", position: "relative" },
-  topStripe: { height: 3, background: "linear-gradient(90deg, #ea580c, #f97316, #fbbf24, #f97316, #ea580c)" },
-
-  ctaStrip: { background: "linear-gradient(135deg, #ea580c, #c2410c)", padding: "0" },
-  ctaInner: {
-    maxWidth: 1200, margin: "0 auto", padding: "28px 24px",
-    display: "flex", alignItems: "center", justifyContent: "space-between",
-    flexWrap: "wrap", gap: 16,
+  footer: { background: DARK, color: "#a3a3a3", marginTop: "auto", position: "relative" },
+  topStripe: {
+    height: 2,
+    background: "linear-gradient(90deg, #92400e, #b45309, #d97706, #f59e0b, #d97706, #b45309, #92400e)",
+    backgroundSize: "200% 100%",
+    animation: "gradientMove 4s ease infinite",
   },
-  ctaTitle: { fontSize: 18, fontWeight: 800, color: "#fff", marginBottom: 4 },
-  ctaDesc: { fontSize: 13, color: "rgba(255,255,255,0.8)" },
+
+  ctaStrip: { background: DARK, padding: "0", borderBottom: "1px solid rgba(255,255,255,0.06)" },
+  ctaInner: {
+    maxWidth: 1280, margin: "0 auto", padding: "36px 32px",
+    display: "flex", alignItems: "center", justifyContent: "space-between",
+    flexWrap: "wrap", gap: 20,
+  },
+  ctaTitle: { fontSize: 20, fontWeight: 700, color: "#fff", marginBottom: 6, fontFamily: "'Space Grotesk','Inter',sans-serif" },
+  ctaDesc: { fontSize: 14, color: "#737373" },
   ctaBtn: {
-    background: "#fff", color: "#ea580c", padding: "12px 28px", borderRadius: 8,
-    fontWeight: 700, fontSize: 14, textDecoration: "none",
-    boxShadow: "0 2px 12px rgba(0,0,0,0.15)",
+    background: "#fff", color: DARK, padding: "14px 32px", borderRadius: 100,
+    fontWeight: 600, fontSize: 14, textDecoration: "none",
+    boxShadow: "0 4px 20px rgba(255,255,255,0.06)", letterSpacing: 0.3,
   },
 
   inner: {
-    maxWidth: 1200, margin: "0 auto", padding: "48px 24px 36px",
-    display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1.2fr", gap: 40,
+    maxWidth: 1280, margin: "0 auto", padding: "56px 32px 44px",
+    display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1.2fr", gap: 48,
   },
-  col: { display: "flex", flexDirection: "column", gap: 6 },
-  brandRow: { display: "flex", alignItems: "center", gap: 12, marginBottom: 14 },
+  col: { display: "flex", flexDirection: "column", gap: 8 },
+  brandRow: { display: "flex", alignItems: "center", gap: 14, marginBottom: 16 },
   brandIcon: {
-    width: 42, height: 42, borderRadius: 10,
-    background: "linear-gradient(135deg, #ea580c, #f97316)",
+    width: 42, height: 42, borderRadius: 12,
+    background: "linear-gradient(135deg, #92400e, #b45309)",
     display: "flex", alignItems: "center", justifyContent: "center",
-    fontSize: 20, boxShadow: "0 2px 12px rgba(249,115,22,0.4)",
+    fontSize: 20, boxShadow: "0 4px 16px rgba(180,83,9,0.25)",
   },
-  brandName: { fontSize: 16, fontWeight: 900, color: "#fff", letterSpacing: 1.5, lineHeight: 1.2 },
-  brandSub: { fontSize: 8, color: "#f97316", fontWeight: 700, letterSpacing: 2, lineHeight: 1.2 },
-  tagline: { fontSize: 13, color: "#94a3b8", lineHeight: 1.8, maxWidth: 320, margin: "0 0 16px" },
+  brandName: { fontSize: 15, fontWeight: 800, color: "#fff", letterSpacing: 2, lineHeight: 1.2, fontFamily: "'Space Grotesk','Inter',sans-serif" },
+  brandSub: { fontSize: 8, color: "#d97706", fontWeight: 700, letterSpacing: 3, lineHeight: 1.2, textTransform: "uppercase" },
+  tagline: { fontSize: 14, color: "#737373", lineHeight: 1.8, maxWidth: 320, margin: "0 0 20px" },
   socialRow: { display: "flex", gap: 8 },
   socialBtn: {
-    width: 38, height: 38, borderRadius: 10,
-    background: "rgba(255,255,255,0.06)",
-    border: "1px solid rgba(255,255,255,0.08)",
+    width: 40, height: 40, borderRadius: 12,
+    background: "rgba(255,255,255,0.04)",
+    border: "1px solid rgba(255,255,255,0.06)",
     display: "flex", alignItems: "center", justifyContent: "center",
-    fontSize: 16, textDecoration: "none", transition: "all 0.2s ease",
+    fontSize: 16, textDecoration: "none", transition: "all 0.3s ease",
   },
   colTitle: {
-    fontSize: 12, fontWeight: 700, letterSpacing: 1.5, color: "#f97316",
-    textTransform: "uppercase", marginBottom: 10,
+    fontSize: 11, fontWeight: 700, letterSpacing: 3, color: "#d97706",
+    textTransform: "uppercase", marginBottom: 14,
   },
   footLink: {
-    fontSize: 13, color: "#94a3b8", textDecoration: "none", lineHeight: 2.4,
-    display: "flex", alignItems: "center", gap: 6,
+    fontSize: 14, color: "#737373", textDecoration: "none", lineHeight: 2.4,
+    display: "flex", alignItems: "center", gap: 8, transition: "color 0.2s ease",
   },
-  linkArrow: { color: "#ea580c", fontSize: 10 },
+  linkArrow: { color: "#525252", fontSize: 10 },
   contactItem: {
-    display: "flex", alignItems: "flex-start", gap: 10,
-    fontSize: 13, color: "#94a3b8", margin: "4px 0", lineHeight: 1.6,
+    display: "flex", alignItems: "flex-start", gap: 12,
+    fontSize: 14, color: "#737373", margin: "5px 0", lineHeight: 1.7,
   },
   contactIcon: { flexShrink: 0 },
-  contactLink: { color: "#94a3b8", textDecoration: "none" },
+  contactLink: { color: "#737373", textDecoration: "none" },
 
-  bottomBar: { borderTop: "1px solid rgba(255,255,255,0.06)", background: DARKER },
+  bottomBar: { borderTop: "1px solid rgba(255,255,255,0.04)", background: DARKER },
   bottomInner: {
-    maxWidth: 1200, margin: "0 auto", padding: "18px 24px",
+    maxWidth: 1280, margin: "0 auto", padding: "20px 32px",
     display: "flex", justifyContent: "space-between", alignItems: "center",
-    fontSize: 12, color: "#475569", flexWrap: "wrap", gap: 8,
+    fontSize: 12, color: "#525252", flexWrap: "wrap", gap: 10,
   },
-  bottomLinks: { display: "flex", alignItems: "center", gap: 8 },
-  bottomLink: { color: "#475569", textDecoration: "none", fontSize: 12 },
-  bottomDot: { color: "#334155" },
+  bottomLinks: { display: "flex", alignItems: "center", gap: 10 },
+  bottomLink: { color: "#525252", textDecoration: "none", fontSize: 12 },
+  bottomDot: { color: "#404040" },
 };
