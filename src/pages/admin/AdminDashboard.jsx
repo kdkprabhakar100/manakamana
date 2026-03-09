@@ -36,7 +36,7 @@ export default function AdminDashboard() {
           {[
             { icon:"📦", label:"Total Products",  value: products.length,  color: PRIMARY },
             { icon:"🧾", label:"Total Invoices",   value: invoices.length, color:"#8b5cf6" },
-            { icon:"💰", label:"Total Billed",     value:`₹${totalRevenue.toLocaleString("en-IN")}`, color:"#10b981" },
+            { icon:"💰", label:"Total Billed",     value:`Rs${totalRevenue.toLocaleString("en-IN")}`, color:"#10b981" },
             { icon:"✉️", label:"Messages",          value: contacts.length, color: unreadCount > 0 ? "#ef4444" : "#6366f1", sub: unreadCount > 0 ? `${unreadCount} unread` : "All read" },
           ].map(st => (
             <div key={st.label} style={{ ...s.statCard, borderTop: `4px solid ${st.color}` }}>

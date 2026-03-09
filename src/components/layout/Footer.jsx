@@ -39,7 +39,7 @@ export default function Footer() {
             <a href="tel:+9779851068337" style={s.socialBtn} title="Call Us">
               <span role="img" aria-label="phone">📞</span>
             </a>
-            <a href="mailto:info@manakamana.com.np" style={s.socialBtn} title="Email">
+            <a href="mailto:mhektm@gmail.com" style={s.socialBtn} title="Email">
               <span role="img" aria-label="email">✉️</span>
             </a>
           </div>
@@ -78,7 +78,7 @@ export default function Footer() {
           </div>
           <div style={s.contactItem}>
             <span style={s.contactIcon}>✉️</span>
-            <a href="mailto:info@manakamana.com.np" style={s.contactLink}>info@manakamana.com.np</a>
+            <a href="mailto:mhektm@gmail.com" style={s.contactLink}>mhektm@gmail.com</a>
           </div>
           <div style={s.contactItem}>
             <span style={s.contactIcon}>🕐</span>

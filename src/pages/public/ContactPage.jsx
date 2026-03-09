@@ -79,9 +79,9 @@ export default function ContactPage() {
 
               <div style={s.contactList}>
                 {[
-                  { icon: "\uD83D\uDCCD", t: "Visit Us", d: "Kathmandu, Bagmati Province, Nepal" },
+                  { icon: "\uD83D\uDCCD", t: "Visit Us", d: "Kritipur, Chovar, Bagmati Province, Nepal" },
                   { icon: "\uD83D\uDCDE", t: "Call Us", d: "+977-9851068337" },
-                  { icon: "\u2709\uFE0F", t: "Email Us", d: "info@manakamana.com.np" },
+                  { icon: "\u2709\uFE0F", t: "Email Us", d: "mhektm@gmail.com" },
                   { icon: "\uD83D\uDD50", t: "Working Hours", d: "Sun \u2013 Fri: 9 AM \u2013 6 PM\nSaturday: 10 AM \u2013 4 PM" },
                 ].map(c => (
                   <div key={c.t} style={s.contactItem}>

@@ -90,7 +90,7 @@ export default function ProductsPage() {
                   <h3 style={s.name}>{p.name}</h3>
                   {p.description && <p style={s.desc}>{p.description}</p>}
                   <p style={s.price}>
-                    {p.price ? `₹${Number(p.price).toLocaleString("en-IN")}` : "Get Latest Price"}
+                    {p.price ? `Rs${Number(p.price).toLocaleString("en-IN")}` : "Get Latest Price"}
                   </p>
                   <div className="product-card-actions" style={s.cardActions}>
                     <a href="tel:+977XXXXXXXX" style={s.callBtn}>📞 Call Now</a>
@@ -132,10 +132,10 @@ export default function ProductsPage() {
                   )}
                 </div>
                 <div style={s.modalPrice}>
-                  {selected.price ? `₹${Number(selected.price).toLocaleString("en-IN")}` : "Contact for Price"}
+                  {selected.price ? `Rs${Number(selected.price).toLocaleString("en-IN")}` : "Contact for Price"}
                 </div>
                 <div style={s.modalActions}>
-                  <a href={`https://wa.me/9779851068337?text=${encodeURIComponent(`Hi, I'd like to inquire about: ${selected.name}${selected.price ? ` (₹${selected.price})` : ""}. Please share availability and pricing details.`)}`}
+                  <a href={`https://wa.me/9779851068337?text=${encodeURIComponent(`Hi, I'd like to inquire about: ${selected.name}${selected.price ? ` (Rs${selected.price})` : ""}. Please share availability and pricing details.`)}`}
                     target="_blank" rel="noreferrer" style={s.modalWaBtn}>💬 Inquire on WhatsApp</a>
                   <a href="tel:+9779851068337" style={s.modalCallBtn}>📞 Call Now</a>
                 </div>

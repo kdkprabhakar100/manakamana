@@ -100,7 +100,7 @@ export default function AdminInvoices() {
                       <td style={s.td}>{inv.invoiceDate||"—"}</td>
                       <td style={s.td}>{(inv.items||[]).length} items</td>
                       <td style={{...s.td,fontWeight:700,color:"#ea580c"}}>
-                        ₹{(inv.total||0).toLocaleString("en-IN",{minimumFractionDigits:2})}
+                        Rs{(inv.total||0).toLocaleString("en-IN",{minimumFractionDigits:2})}
                       </td>
                       <td style={s.td}>
                         <div style={s.rowActs}>

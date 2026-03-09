@@ -277,7 +277,7 @@ export default function AdminProducts() {
                   )}
                   <p style={s.price}>
                     {product.price
-                      ? `₹${Number(product.price).toLocaleString("en-IN")}`
+                      ? `Rs${Number(product.price).toLocaleString("en-IN")}`
                       : "Get Latest Price"
                     }
                   </p>
@@ -322,7 +322,7 @@ export default function AdminProducts() {
 
             <div className="modal-two-col" style={s.twoCol}>
               <div>
-                <label style={s.fieldLabel}>Price (₹)</label>
+                <label style={s.fieldLabel}>Price (Rs)</label>
                 <input
                   type="number"
                   min="0"

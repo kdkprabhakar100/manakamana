@@ -6,7 +6,7 @@ import { useInvoices } from "../../hooks/useInvoices";
 const TAX_RATE = 0.18;
 
 function fmt(n) {
-  return "₹" + Number(n).toLocaleString("en-IN", { minimumFractionDigits: 2 });
+  return "Rs" + Number(n).toLocaleString("en-IN", { minimumFractionDigits: 2 });
 }
 
 let _counter = 1001;
@@ -48,10 +48,10 @@ export default function AdminInvoice() {
 
   const DEFAULT_COMPANY = {
     name: "Manakamana Heavy Equipments Pvt. Ltd.",
-    address: "Kathmandu, Bagmati Province",
+    address: "Kritipur, Chovar, Bagmati Province, Nepal",
     city: "Kathmandu, Nepal",
-    phone: "+977-01-XXXXXXX",
-    email: "info@manakamana.com.np",
+    phone: "+977-9851068337",
+    email: "mhektm@gmail.com",
     gstin: "XXXXXXXXXXXXXXXXX",
     billNo: "",
   };
@@ -224,28 +224,124 @@ export default function AdminInvoice() {
   };
 
   /* ── Print (XSS-safe: cloneNode instead of raw innerHTML) ── */
-  const handlePrint = () => {
-    const safeTitle = `${docType} ${invoiceNo}`.replace(/[<>"'&]/g, "");
-    const w = window.open("","_blank");
-    w.document.write(`<html><head>
-      <title>${safeTitle}</title>
-      <style>
-        *{box-sizing:border-box;margin:0;padding:0}
-        body{font-family:'Inter','Segoe UI',sans-serif;color:#1e293b;background:#fff}
-        .wrap{padding:40px 50px;max-width:900px;margin:0 auto}
-        table{width:100%;border-collapse:collapse}
-        th,td{padding:9px 11px;text-align:left;font-size:12px}
-        @media print{body{margin:0}.wrap{padding:20px 30px}}
-      </style>
-    </head><body><div class="wrap" id="print-root"></div></body></html>`);
-    w.document.close();
-    const clone = printRef.current.cloneNode(true);
-    // Strip any script tags that may have been injected
-    clone.querySelectorAll("script").forEach(el => el.remove());
-    w.document.getElementById("print-root").appendChild(clone);
-    w.focus();
-    setTimeout(() => { w.print(); w.close(); }, 500);
-  };
+ const handlePrint = () => {
+  const safeTitle = `${docType} ${invoiceNo}`.replace(/[<>"'&]/g, "");
+  const w = window.open("", "_blank");
+
+  w.document.write(`
+  <html>
+  <head>
+    <title>${safeTitle}</title>
+
+    <style>
+      *{
+        box-sizing:border-box;
+        margin:0;
+        padding:0;
+      }
+
+      body{
+        font-family:'Inter','Segoe UI',sans-serif;
+        color:#1e293b;
+        background:#fff;
+      }
+
+      .wrap{
+        padding:40px 50px;
+        max-width:900px;
+        margin:0 auto;
+      }
+
+      table{
+        width:100%;
+        border-collapse:collapse;
+      }
+
+      th,td{
+        padding:9px 11px;
+        text-align:left;
+        font-size:12px;
+      }
+
+      /* MULTI PAGE SUPPORT */
+
+      thead{
+        display:table-header-group;
+      }
+
+      tfoot{
+        display:table-footer-group;
+      }
+
+      tr{
+        page-break-inside:avoid;
+      }
+
+      table{
+        page-break-inside:auto;
+      }
+
+      /* PRINT SETTINGS */
+
+      @page{
+        size:A4;
+        margin:20mm;
+      }
+
+      @media print{
+
+        body{
+          margin:0;
+        }
+
+        .wrap{
+          padding:0;
+        }
+
+        .invoice-doc{
+          max-height:none !important;
+          overflow:visible !important;
+        }
+
+        table{
+          page-break-inside:auto;
+        }
+
+        tr{
+          page-break-inside:avoid;
+          page-break-after:auto;
+        }
+
+        thead{
+          display:table-header-group;
+        }
+
+      }
+    </style>
+
+  </head>
+
+  <body>
+    <div class="wrap" id="print-root"></div>
+  </body>
+  </html>
+  `);
+
+  w.document.close();
+
+  const clone = printRef.current.cloneNode(true);
+
+  clone.querySelectorAll("script").forEach(el => el.remove());
+
+  w.document.getElementById("print-root").appendChild(clone);
+
+  w.focus();
+
+  setTimeout(() => {
+    w.print();
+    w.close();
+  }, 500);
+};
 
   /* ══ RENDER ══ */
   return (
@@ -394,7 +490,7 @@ export default function AdminInvoice() {
                     <th style={{...s.th,width:"35%"}}>Product</th>
                     <th style={{...s.th,width:"10%"}}>Unit</th>
                     <th style={{...s.th,width:"18%"}}>Qty</th>
-                    <th style={{...s.th,width:"18%"}}>Rate (₹)</th>
+                    <th style={{...s.th,width:"18%"}}>Rate (Rs)</th>
                     <th style={{...s.th,width:"14%",textAlign:"right"}}>Amount</th>
                     <th style={{...s.th,width:"5%"}}></th>
                   </tr></thead>
