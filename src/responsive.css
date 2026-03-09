@@ -3,6 +3,57 @@
    Inspired by Apple, Tesla, Stripe — Clean, Bold, Cinematic
    =================================================================== */
 
+/* ── Admin SaaS Dashboard ── */
+
+/* Sidebar link hover */
+.admin-sidebar-link:hover {
+  background: #f1f5f9 !important;
+}
+
+/* Stat card hover */
+.admin-stat-card:hover {
+  transform: translateY(-4px) !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.06), 0 12px 40px rgba(0,0,0,0.06) !important;
+}
+
+/* Quick action card hover */
+.admin-qa-card:hover {
+  transform: translateY(-4px) !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.06), 0 12px 40px rgba(0,0,0,0.06) !important;
+}
+
+/* Table row hover */
+.admin-table-row:hover {
+  background: #fafafb !important;
+}
+
+/* Message row hover */
+.admin-msg-row:hover {
+  background: #fafafb !important;
+}
+
+/* View button hover */
+.admin-view-btn:hover {
+  background: #e0e7ff !important;
+}
+
+/* CTA button hover */
+.admin-cta-btn:hover {
+  opacity: 0.9 !important;
+  box-shadow: 0 4px 16px rgba(99,102,241,0.35) !important;
+}
+
+/* Sidebar toggle hover */
+.admin-sidebar-toggle:hover {
+  background: #f1f5f9 !important;
+  color: #475569 !important;
+}
+
+/* Topbar search focus-within */
+.admin-topbar .admin-topbar-user-info {
+  /* visible by default */
+}
+
 /* ── Premium Global Transitions ── */
 * {
   -webkit-tap-highlight-color: transparent;
@@ -123,12 +174,36 @@ input:focus, textarea:focus, select:focus {
   }
 
   /* Admin Dashboard */
+  .admin-sidebar {
+    display: none !important;
+  }
+  .admin-main-area {
+    margin-left: 0 !important;
+  }
+  .admin-topbar {
+    position: sticky !important;
+    top: 0 !important;
+  }
+  .admin-topbar-user-info {
+    display: none !important;
+  }
+  .admin-page-head {
+    flex-direction: column !important;
+  }
   .admin-header {
     flex-direction: column !important;
     align-items: flex-start !important;
     gap: 12px !important;
   }
   .admin-stats-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 12px !important;
+  }
+  .admin-chart-row {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+  .admin-qa-grid {
     grid-template-columns: 1fr 1fr !important;
     gap: 12px !important;
   }
@@ -269,6 +344,9 @@ input:focus, textarea:focus, select:focus {
     grid-template-columns: 1fr !important;
   }
   .admin-stats-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .admin-qa-grid {
     grid-template-columns: 1fr 1fr !important;
   }
 

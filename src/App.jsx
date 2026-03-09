@@ -8,6 +8,7 @@ import ScrollToTop from "./components/common/ScrollToTop";
 import BackToTop from "./components/common/BackToTop";
 import Navbar from "./components/layout/Navbar";
 import Footer from "./components/layout/Footer";
+import AdminLayout from "./components/layout/AdminLayout";
 
 // ✅ Lazy-loaded pages (code splitting)
 const HomePage = lazy(() => import("./pages/public/HomePage"));
@@ -94,9 +95,9 @@ export default function App() {
               path="/admin"
               element={
                 <AdminRoute>
-                  <Layout hideFooter>
+                  <AdminLayout>
                     <AdminDashboard />
-                  </Layout>
+                  </AdminLayout>
                 </AdminRoute>
               }
             />
@@ -104,9 +105,9 @@ export default function App() {
               path="/admin/products"
               element={
                 <AdminRoute>
-                  <Layout hideFooter>
+                  <AdminLayout>
                     <AdminProducts />
-                  </Layout>
+                  </AdminLayout>
                 </AdminRoute>
               }
             />
@@ -114,9 +115,9 @@ export default function App() {
               path="/admin/invoices"
               element={
                 <AdminRoute>
-                  <Layout hideFooter>
+                  <AdminLayout>
                     <AdminInvoices />
-                  </Layout>
+                  </AdminLayout>
                 </AdminRoute>
               }
             />
@@ -124,9 +125,9 @@ export default function App() {
               path="/admin/invoice/:id"
               element={
                 <AdminRoute>
-                  <Layout hideFooter>
+                  <AdminLayout>
                     <AdminInvoice />
-                  </Layout>
+                  </AdminLayout>
                 </AdminRoute>
               }
             />
@@ -134,9 +135,9 @@ export default function App() {
               path="/admin/messages"
               element={
                 <AdminRoute>
-                  <Layout hideFooter>
+                  <AdminLayout>
                     <AdminMessages />
-                  </Layout>
+                  </AdminLayout>
                 </AdminRoute>
               }
             />
