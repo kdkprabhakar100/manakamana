@@ -282,14 +282,8 @@ export default function AdminProducts() {
                     }
                   </p>
 
-                  {/* Public actions */}
-                  <div style={s.cardActions}>
-                    <button style={{ ...s.btn, ...s.btnOutline, flex: 1 }}>📞 Call Now</button>
-                    <button style={{ ...s.btn, ...s.btnWa, flex: 1 }}>💬 WhatsApp</button>
-                  </div>
-
                   {/* Admin actions */}
-                  <div style={{ ...s.cardActions, marginTop: 8 }}>
+                  <div style={s.cardActions}>
                     <button style={{ ...s.btn, ...s.btnSecondary, flex: 1 }} onClick={() => openEdit(product)}>
                       ✏️ Edit
                     </button>
