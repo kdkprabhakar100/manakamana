@@ -41,10 +41,23 @@ function getFiscalYear() {
 }
 
 const INV_KEY = "manakamana_inv_counter";
-function newInvoiceNo() {
-  const n = parseInt(localStorage.getItem(INV_KEY) || "0", 10) + 1;
-  localStorage.setItem(INV_KEY, String(n));
-  return `SB-${String(n).padStart(5, "0")}`;
+// function newInvoiceNo() {
+//   const n = parseInt(localStorage.getItem(INV_KEY) || "0", 10) + 1;
+//   localStorage.setItem(INV_KEY, String(n));
+//   return `SB-${String(n).padStart(5, "0")}`;
+// }
+function generateInvoiceNo(invoices) {
+  if (!invoices || invoices.length === 0) return "SB-00001";
+
+  const numbers = invoices.map(inv => {
+    const num = parseInt((inv.invoiceNo || "").replace("SB-", ""));
+    return isNaN(num) ? 0 : num;
+  });
+
+  const max = Math.max(...numbers);
+  const next = max + 1;
+
+  return `SB-${String(next).padStart(5, "0")}`;
 }
 
 export default function AdminInvoice() {
@@ -72,7 +85,7 @@ export default function AdminInvoice() {
   const DEFAULT_NOTES = "";
   const DEFAULT_TERMS = "Payment due within 30 days.\nGoods once sold will not be taken back.";
 
-  const [invoiceNo,   setInvoiceNo]   = useState(newInvoiceNo);
+  const [invoiceNo, setInvoiceNo] = useState("");
   const [invoiceDate, setInvoiceDate] = useState(today());
   const [dueDate,     setDueDate]     = useState("");
   const [docType,     setDocType]     = useState("Invoice");
@@ -89,26 +102,30 @@ export default function AdminInvoice() {
   const [saving,      setSaving]      = useState(false);
 
   /* ── Load existing invoice ── */
-  useEffect(() => {
-    if (id && id !== "new") {
-      const existing = invoices.find(i => i.id === id);
-      if (existing) {
-        setInvoiceNo(existing.invoiceNo || newInvoiceNo());
-        setInvoiceDate(existing.invoiceDate || today());
-        setDueDate(existing.dueDate || "");
-        setDocType(existing.docType || "Invoice");
-        setClient(existing.client || EMPTY_CLIENT);
-        setItems(existing.items || []);
-        setDiscountPct(existing.discountPct || 0);
-        setTaxEnabled(existing.taxEnabled ?? true);
-        setNotes(existing.notes || DEFAULT_NOTES);
-        setTerms(existing.terms || DEFAULT_TERMS);
-        setCompany(existing.company || DEFAULT_COMPANY);
-      }
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, invoices]);
-
+  // useEffect(() => {
+  //   if (id && id !== "new") {
+  //     const existing = invoices.find(i => i.id === id);
+  //     if (existing) {
+  //       setInvoiceNo(existing.invoiceNo || newInvoiceNo());
+  //       setInvoiceDate(existing.invoiceDate || today());
+  //       setDueDate(existing.dueDate || "");
+  //       setDocType(existing.docType || "Invoice");
+  //       setClient(existing.client || EMPTY_CLIENT);
+  //       setItems(existing.items || []);
+  //       setDiscountPct(existing.discountPct || 0);
+  //       setTaxEnabled(existing.taxEnabled ?? true);
+  //       setNotes(existing.notes || DEFAULT_NOTES);
+  //       setTerms(existing.terms || DEFAULT_TERMS);
+  //       setCompany(existing.company || DEFAULT_COMPANY);
+  //     }
+  //   }
+  // // eslint-disable-next-line react-hooks/exhaustive-deps
+  // }, [id, invoices]);
+useEffect(() => {
+  if (!id || id === "new") {
+    setInvoiceNo(generateInvoiceNo(invoices));
+  }
+}, [invoices, id]);
   /* ── Calculations ── */
   const subtotal = items.reduce((s,i) => s + i.qty * i.rate, 0);
   const discount = subtotal * (discountPct / 100);
