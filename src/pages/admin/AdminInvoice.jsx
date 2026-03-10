@@ -9,42 +9,10 @@ function fmt(n) {
   return Number(n).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-/* ── Convert number to words (Nepali style) ── */
-function numberToWords(n) {
-  if (n === 0) return "Zero";
-  const ones = ["","One","Two","Three","Four","Five","Six","Seven","Eight","Nine",
-    "Ten","Eleven","Twelve","Thirteen","Fourteen","Fifteen","Sixteen","Seventeen","Eighteen","Nineteen"];
-  const tens = ["","","Twenty","Thirty","Forty","Fifty","Sixty","Seventy","Eighty","Ninety"];
-  function convert(num) {
-    if (num < 20) return ones[num];
-    if (num < 100) return tens[Math.floor(num/10)] + (num%10?" "+ones[num%10]:"");
-    if (num < 1000) return ones[Math.floor(num/100)]+" Hundred"+(num%100?" "+convert(num%100):"");
-    if (num < 100000) return convert(Math.floor(num/1000))+" Thousand"+(num%1000?" "+convert(num%1000):"");
-    if (num < 10000000) return convert(Math.floor(num/100000))+" Lakh"+(num%100000?" "+convert(num%100000):"");
-    return convert(Math.floor(num/10000000))+" Crore"+(num%10000000?" "+convert(num%10000000):"");
-  }
-  const rupees = Math.floor(n);
-  const paisa  = Math.round((n - rupees) * 100);
-  let words = convert(rupees) + " Rupees";
-  if (paisa > 0) words += " And " + convert(paisa) + " Paisa";
-  return words + " Only";
-}
-
-/* ── Nepali fiscal year: starts mid-July (Shrawan 1) ── */
-function getFiscalYear() {
-  const now  = new Date();
-  const year = now.getFullYear();
-  const bsYear = year + 56; // approximate BS year
-  const cutoff = new Date(year, 6, 16); // ~July 16
-  if (now >= cutoff) return `FY${bsYear}/${(bsYear+1).toString().slice(-3)}`;
-  return `FY${bsYear-1}/${bsYear.toString().slice(-3)}`;
-}
-
-const INV_KEY = "manakamana_inv_counter";
+let _counter = 1001;
 function newInvoiceNo() {
-  const n = parseInt(localStorage.getItem(INV_KEY) || "0", 10) + 1;
-  localStorage.setItem(INV_KEY, String(n));
-  return `SB-${String(n).padStart(5, "0")}`;
+  const ts = Date.now().toString(36).toUpperCase();
+  return `EST-${new Date().getFullYear()}-${ts}-${_counter++}`;
 }
 
 export default function AdminInvoice() {
@@ -55,40 +23,7 @@ export default function AdminInvoice() {
   const { products }                            = useProducts();
   const { invoices, saveInvoice, updateInvoice } = useInvoices();
 
-  const today = () => new Date().toISOString().slice(0,10);
-
-  const DEFAULT_COMPANY = {
-    name:    "Manakamana Heavy Equipments Pvt. Ltd.",
-    fy:      getFiscalYear(),
-    address: "Kritipur, Chovar, Bagmati Province, Nepal",
-    city:    "Kathmandu, Nepal",
-    phone:   "+977-9851068337",
-    email:   "mhektm@gmail.com",
-    pan:     "XXXXXXXXX",
-    billNo:  "",
-  };
-
-  const EMPTY_CLIENT = { name:"", company:"", address:"", phone:"", email:"", gstin:"", payment:"Cash/Credit" };
-  const DEFAULT_NOTES = "";
-  const DEFAULT_TERMS = "Payment due within 30 days.\nGoods once sold will not be taken back.";
-
-  const [invoiceNo,   setInvoiceNo]   = useState(newInvoiceNo);
-  const [invoiceDate, setInvoiceDate] = useState(today());
-  const [dueDate,     setDueDate]     = useState("");
-  const [docType,     setDocType]     = useState("Invoice");
-  const [company,     setCompany]     = useState(DEFAULT_COMPANY);
-  const [client,      setClient]      = useState(EMPTY_CLIENT);
-  const [items,       setItems]       = useState([]);
-  const [taxEnabled,  setTaxEnabled]  = useState(true);
-  const [discountPct, setDiscountPct] = useState(0);
-  const [notes,       setNotes]       = useState(DEFAULT_NOTES);
-  const [terms,       setTerms]       = useState(DEFAULT_TERMS);
-  const [editCompany, setEditCompany] = useState(false);
-  const [search,      setSearch]      = useState("");
-  const [showDrop,    setShowDrop]    = useState(false);
-  const [saving,      setSaving]      = useState(false);
-
-  /* ── Load existing invoice ── */
+  /* ── Load existing invoice when editing ── */
   useEffect(() => {
     if (id && id !== "new") {
       const existing = invoices.find(i => i.id === id);
@@ -96,7 +31,7 @@ export default function AdminInvoice() {
         setInvoiceNo(existing.invoiceNo || newInvoiceNo());
         setInvoiceDate(existing.invoiceDate || today());
         setDueDate(existing.dueDate || "");
-        setDocType(existing.docType || "Invoice");
+        setDocType(existing.docType || "Estimate");
         setClient(existing.client || EMPTY_CLIENT);
         setItems(existing.items || []);
         setDiscountPct(existing.discountPct || 0);
@@ -109,14 +44,38 @@ export default function AdminInvoice() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, invoices]);
 
-  /* ── Calculations ── */
-  const subtotal = items.reduce((s,i) => s + i.qty * i.rate, 0);
-  const discount = subtotal * (discountPct / 100);
-  const taxable  = subtotal - discount;
-  const tax      = taxEnabled ? taxable * TAX_RATE : 0;
-  const total    = taxable + tax;
+  const today = () => new Date().toISOString().slice(0, 10);
 
-  /* ── Product search ── */
+  const DEFAULT_COMPANY = {
+    name: "Manakamana Heavy Equipments Pvt. Ltd.",
+    address: "Kritipur, Chovar, Bagmati Province, Nepal",
+    city: "Kathmandu, Nepal",
+    phone: "+977-9851068337",
+    email: "mhektm@gmail.com",
+    gstin: "XXXXXXXXXXXXXXXXX",
+    billNo: "",
+  };
+  const EMPTY_CLIENT = { name:"", company:"", address:"", phone:"", email:"", gstin:"" };
+  const DEFAULT_NOTES = "Thank you for your business!\nAll prices are in NPR unless stated otherwise.";
+  const DEFAULT_TERMS = "Payment due within 30 days.\nGoods once sold will not be taken back.";
+
+  const [invoiceNo,   setInvoiceNo]   = useState(newInvoiceNo);
+  const [invoiceDate, setInvoiceDate] = useState(today());
+  const [dueDate,     setDueDate]     = useState("");
+  const [docType,     setDocType]     = useState("Estimate");
+  const [company,     setCompany]     = useState(DEFAULT_COMPANY);
+  const [client,      setClient]      = useState(EMPTY_CLIENT);
+  const [items,       setItems]       = useState([]);
+  const [taxEnabled,  setTaxEnabled]  = useState(true);
+  const [discountPct, setDiscountPct] = useState(0);
+  const [notes,       setNotes]       = useState(DEFAULT_NOTES);
+  const [terms,       setTerms]       = useState(DEFAULT_TERMS);
+  const [editCompany, setEditCompany] = useState(false);
+  const [search,      setSearch]      = useState("");
+  const [showDrop,    setShowDrop]    = useState(false);
+  const [saving,      setSaving]      = useState(false);
+
+  /* ── Filtered products (live from Firebase) ── */
   const filtered = search.trim()
     ? products.filter(p =>
         p.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -159,8 +118,34 @@ export default function AdminInvoice() {
 
   /* ── Save ── */
   const handleSave = async () => {
-    if (!client.name.trim() || items.length === 0) {
-      alert("Please fill Client Name and add at least one product.");
+    /* ── Validate required fields ── */
+    const missing = [];
+    if (!client.name.trim())    missing.push("Client Name");
+    if (!client.company.trim()) missing.push("Company");
+    if (!client.address.trim()) missing.push("Address");
+    if (!invoiceDate)           missing.push("Date");
+    if (!docType)               missing.push("Type");
+    if (items.length === 0)     missing.push("At least one product/service");
+    if (missing.length > 0) {
+      alert(`Please fill all required fields before saving:\n\n• ${missing.join('\n• ')}`);
+      return;
+    }
+
+    /* ── Validate stock before saving ── */
+    const stockErrors = [];
+    for (const item of items) {
+      if (!item.productId) continue;
+      const prod = products.find(p => p.id === item.productId);
+      if (!prod) continue;
+      const stock = prod.quantity !== undefined ? Number(prod.quantity) : 0;
+      if (stock <= 0) {
+        stockErrors.push(`❌ ${prod.name} — out of stock (0 units)`);
+      } else if (item.qty > stock) {
+        stockErrors.push(`⚠️ ${prod.name} — only ${stock} in stock, but ${item.qty} requested`);
+      }
+    }
+    if (stockErrors.length > 0) {
+      alert(`Cannot save invoice — stock issues:\n\n${stockErrors.join('\n')}\n\nPlease adjust quantities or restock.`);
       return;
     }
     setSaving(true);
@@ -180,148 +165,125 @@ export default function AdminInvoice() {
     }
   };
 
-  const handlePrint = () => {
-    const now = new Date();
-    const printTime = now.toLocaleDateString("en-IN") + " " +
-      now.toLocaleTimeString("en-IN", { hour:"2-digit", minute:"2-digit", hour12:true });
-    const timeStr = now.toLocaleTimeString("en-IN", { hour:"2-digit", minute:"2-digit", hour12:false });
+  /* ── Print (XSS-safe: cloneNode instead of raw innerHTML) ── */
+ const handlePrint = () => {
+  const safeTitle = `${docType} ${invoiceNo}`.replace(/[<>"'&]/g, "");
+  const w = window.open("", "_blank");
 
-    const rows = items.map((item, idx) => `
-      <tr>
-        <td class="c">${idx + 1}</td>
-        <td class="c">${item.hsCode || ""}</td>
-        <td class="l">${item.name}</td>
-        <td class="c">${fmt(item.qty)}</td>
-        <td class="c">${item.unit}</td>
-        <td class="r">${fmt(item.rate)}</td>
-        <td class="r">${fmt(item.qty * item.rate)}</td>
-      </tr>`).join("");
+  w.document.write(`
+  <html>
+  <head>
+    <title>${safeTitle}</title>
 
-    const discountRow = discountPct > 0 ? `
-      <tr class="trow">
-        <td colspan="5" class="r tot-left"></td>
-        <td class="r">Discount (${discountPct}%) :</td>
-        <td class="r">${fmt(discount)}</td>
-      </tr>` : "";
+    <style>
+      *{
+        box-sizing:border-box;
+        margin:0;
+        padding:0;
+      }
 
-    const vatRow = taxEnabled ? `
-      <tr class="trow">
-        <td colspan="5" class="r tot-left"></td>
-        <td class="r">13% VAT :</td>
-        <td class="r">${fmt(tax)}</td>
-      </tr>` : "";
+      body{
+        font-family:'Inter','Segoe UI',sans-serif;
+        color:#1e293b;
+        background:#fff;
+      }
 
-    const totalsBlock = `
-      <tr class="trow">
-        <td colspan="5" class="r tot-left"><b>In Words:</b> ${numberToWords(total)}</td>
-        <td class="r">Sub Total :</td>
-        <td class="r"><b>${fmt(subtotal)}</b></td>
-      </tr>
-      ${discountRow}
-      <tr class="trow">
-        <td colspan="5" class="r tot-left"></td>
-        <td class="r">Taxable Value :</td>
-        <td class="r">${fmt(taxable)}</td>
-      </tr>
-      ${vatRow}
-      <tr class="tgrand">
-        <td colspan="5" class="r tot-left"></td>
-        <td class="r">Total Amount :</td>
-        <td class="r">${fmt(total)}</td>
-      </tr>`;
+      .wrap{
+        padding:40px 50px;
+        max-width:900px;
+        margin:0 auto;
+      }
 
-    const w = window.open("", "_blank");
-    w.document.write(`<!DOCTYPE html>
-<html><head>
-<meta charset="UTF-8"/>
-<title>${docType} ${invoiceNo}</title>
-<style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Arial',sans-serif;font-size:11px;color:#000;background:#fff}
-.wrap{width:210mm;margin:0 auto;padding:10mm 13mm 8mm}
-.co-name{font-size:17px;font-weight:bold;text-align:center;text-transform:uppercase;letter-spacing:.5px}
-.co-sub{font-size:11px;text-align:center;margin:3px 0 5px}
-.hr1{border-top:2.5px solid #000;margin-bottom:1px}
-.hr2{border-top:1px solid #000;margin-bottom:6px}
-.info{width:100%;border-collapse:collapse;margin-bottom:6px;border:1px solid #000}
-.info td{padding:3px 7px;font-size:11px;vertical-align:top}
-.info .lbl{font-weight:bold;white-space:nowrap}
-.info .bdl{border-left:1px solid #000}
-.inv{width:100%;border-collapse:collapse;table-layout:fixed}
-.inv th{border:1px solid #000;padding:5px 4px;text-align:center;font-size:11px;font-weight:bold}
-.inv td{border:1px solid #000;padding:4px 5px;font-size:11px;vertical-align:middle}
-.c{text-align:center}.r{text-align:right}.l{text-align:left;padding-left:6px}
-.trow td{border:1px solid #000;padding:3px 6px;font-size:11px}
-.tgrand td{border:1px solid #000;padding:4px 6px;font-size:12px;font-weight:bold;background:#f0f0f0}
-.tot-left{border-right:1px solid #000 !important;text-align:left;font-size:10px;color:#333}
-.remarks{margin-top:8px;font-size:11px}
-.sig{width:100%;border-collapse:collapse;margin-top:40px}
-.sig td{width:25%;text-align:center;padding:0 8px;vertical-align:bottom}
-.sig-name{font-size:11px;font-weight:bold;min-height:20px}
-.sig-line{border-top:1px solid #000;margin:2px 0 3px}
-.sig-label{font-size:10px;color:#444}
-.ptime{margin-top:10px;font-size:10px;color:#555}
-@media print{
-  body{margin:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  .wrap{padding:7mm 10mm 5mm;width:100%}
-  thead{display:table-header-group}
-  tr{page-break-inside:avoid}
-  .keep{page-break-inside:avoid}
-}
-</style>
-</head><body>
-<div class="wrap">
-<div class="co-name">${company.name} [${company.fy || getFiscalYear()}]</div>
-<div class="co-sub">Phone : ${company.phone}&nbsp;&nbsp;&nbsp;&nbsp;PAN NO : ${company.pan}</div>
-<div class="hr1"></div><div class="hr2"></div>
-<table class="info"><tr>
-  <td style="width:50%">
-    <table style="width:100%;border-collapse:collapse">
-      <tr><td class="lbl">Customer&nbsp;</td><td>: ${client.company || client.name || "—"}</td></tr>
-      <tr><td class="lbl">Address&nbsp;</td><td>: ${client.address || "—"}</td></tr>
-      <tr><td class="lbl">Contact No&nbsp;</td><td>: ${client.phone || "—"}</td></tr>
-      <tr><td class="lbl">VAT/PAN No&nbsp;</td><td>: ${client.gstin || "—"}</td></tr>
-      <tr><td class="lbl">Payment&nbsp;</td><td>: ${client.payment || "Cash/Credit"}</td></tr>
-    </table>
-  </td>
-  <td class="bdl" style="width:50%">
-    <table style="width:100%;border-collapse:collapse">
-      <tr><td class="lbl">Invoice No&nbsp;</td><td>: ${invoiceNo}</td></tr>
-      <tr><td class="lbl">Date &amp; Time&nbsp;</td><td>: ${invoiceDate} ${timeStr}</td></tr>
-      <tr><td class="lbl">Miti&nbsp;</td><td>: ${dueDate || ""}</td></tr>
-      <tr><td class="lbl">Order No &amp; Dt&nbsp;</td><td>:</td></tr>
-      <tr><td class="lbl">Transport&nbsp;</td><td>:</td></tr>
-    </table>
-  </td>
-</tr></table>
-<table class="inv">
-  <thead><tr>
-    <th style="width:4%">SNo</th>
-    <th style="width:10%">HS Code</th>
-    <th style="width:35%">Product</th>
-    <th style="width:9%">Quantity</th>
-    <th style="width:8%">Uom</th>
-    <th style="width:17%">Rate</th>
-    <th style="width:17%">Net Amount</th>
-  </tr></thead>
-  <tbody>
-    ${rows}
-    ${totalsBlock}
-  </tbody>
-</table>
-<div class="remarks keep">Remarks : ${notes || ""}</div>
-<table class="sig keep"><tr>
-  <td><div class="sig-name"></div><div class="sig-line"></div><div class="sig-label">Received By</div></td>
-  <td><div class="sig-name">admin</div><div class="sig-line"></div><div class="sig-label">Prepared</div></td>
-  <td><div class="sig-name">admin</div><div class="sig-line"></div><div class="sig-label">Printed By</div></td>
-  <td><div class="sig-name"></div><div class="sig-line"></div><div class="sig-label">Authorize By.</div></td>
-</tr></table>
-<div class="ptime keep">Printed Date &amp; Time : ${printTime}</div>
-</div></body></html>`);
-    w.document.close();
-    w.focus();
-    setTimeout(() => { w.print(); w.close(); }, 700);
-  };
+      table{
+        width:100%;
+        border-collapse:collapse;
+      }
+
+      th,td{
+        padding:9px 11px;
+        text-align:left;
+        font-size:12px;
+      }
+
+      /* MULTI PAGE SUPPORT */
+
+      thead{
+        display:table-header-group;
+      }
+
+      tfoot{
+        display:table-footer-group;
+      }
+
+      tr{
+        page-break-inside:avoid;
+      }
+
+      table{
+        page-break-inside:auto;
+      }
+
+      /* PRINT SETTINGS */
+
+      @page{
+        size:A4;
+        margin:20mm;
+      }
+
+      @media print{
+
+        body{
+          margin:0;
+        }
+
+        .wrap{
+          padding:0;
+        }
+
+        .invoice-doc{
+          max-height:none !important;
+          overflow:visible !important;
+        }
+
+        table{
+          page-break-inside:auto;
+        }
+
+        tr{
+          page-break-inside:avoid;
+          page-break-after:auto;
+        }
+
+        thead{
+          display:table-header-group;
+        }
+
+      }
+    </style>
+
+  </head>
+
+  <body>
+    <div class="wrap" id="print-root"></div>
+  </body>
+  </html>
+  `);
+
+  w.document.close();
+
+  const clone = printRef.current.cloneNode(true);
+
+  clone.querySelectorAll("script").forEach(el => el.remove());
+
+  w.document.getElementById("print-root").appendChild(clone);
+
+  w.focus();
+
+  setTimeout(() => {
+    w.print();
+    w.close();
+  }, 500);
+};
 
   /* ══ RENDER ══ */
   return (
@@ -377,8 +339,8 @@ body{font-family:'Arial',sans-serif;font-size:11px;color:#000;background:#fff}
 
           {/* Client */}
           <Card title="Bill To (Client)">
-            <div style={s.fGrid}>
-              {[["name","Client Name",true],["company","Company / Firm",true],["phone","Phone"],["email","Email"],["address","Address",true],["gstin","VAT/PAN No"],["payment","Payment Method"]].map(([k,lbl,req])=>(
+            <div className="invoice-fgrid" style={s.fGrid}>
+              {[["name","Client Name",true],["company","Company",true],["phone","Phone"],["email","Email"],["address","Address",true],["gstin","VAT/PAN"]].map(([k,lbl,req])=>(
                 <div key={k} style={k==="address"?{gridColumn:"1/-1"}:{}}>
                   <label style={s.lbl}>{lbl}{req&&<span style={{color:"#ef4444"}}> *</span>}</label>
                   {k==="payment"
@@ -549,20 +511,13 @@ body{font-family:'Arial',sans-serif;font-size:11px;color:#000;background:#fff}
           <div ref={printRef} style={s.doc}>
 
             {/* Header */}
-            <div style={{textAlign:"center",marginBottom:4}}>
-              <div style={{fontSize:15,fontWeight:900,textTransform:"uppercase",letterSpacing:0.5}}>{company.name} [{company.fy}]</div>
-              <div style={{fontSize:10,color:"#444",marginTop:2}}>Phone : {company.phone} &nbsp;&nbsp; PAN NO : {company.pan}</div>
-            </div>
-            <div style={{borderTop:"2px solid #000",margin:"6px 0"}} />
-
-            {/* Info grid */}
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",border:"1px solid #000",marginBottom:6,fontSize:10}}>
-              <div style={{padding:"6px 8px",borderRight:"1px solid #000"}}>
-                <div><b>Customer :</b> {client.company||client.name||"—"}</div>
-                <div><b>Address :</b> {client.address||"—"}</div>
-                <div><b>Contact No :</b> {client.phone||"—"}</div>
-                <div><b>VAT/PAN No :</b> {client.gstin||"—"}</div>
-                <div><b>Payment :</b> {client.payment||"Cash/Credit"}</div>
+            <div className="invoice-doc-header" style={s.docHeader}>
+              <div>
+                <div style={s.docCompany}>{company.name}</div>
+                <div style={s.docSmall}>{company.address}, {company.city}</div>
+                <div style={s.docSmall}>📞 {company.phone} · ✉ {company.email}</div>
+                {company.gstin&&<div style={s.docSmall}>VAT/PAN: {company.gstin}</div>}
+                {company.billNo&&<div style={s.docSmall}>Bill No: {company.billNo}</div>}
               </div>
               <div style={{padding:"6px 8px"}}>
                 <div><b>Invoice No :</b> {invoiceNo}</div>
