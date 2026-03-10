@@ -3,7 +3,29 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useProducts } from "../../hooks/useProducts";
 import { useInvoices } from "../../hooks/useInvoices";
 
+
 const TAX_RATE = 0.13;
+
+// Convert number to words (Nepali style)
+function numberToWords(n) {
+  if (n === 0) return "Zero";
+  const ones = ["","One","Two","Three","Four","Five","Six","Seven","Eight","Nine",
+    "Ten","Eleven","Twelve","Thirteen","Fourteen","Fifteen","Sixteen","Seventeen","Eighteen","Nineteen"];
+  const tens = ["","","Twenty","Thirty","Forty","Fifty","Sixty","Seventy","Eighty","Ninety"];
+  function convert(num) {
+    if (num < 20) return ones[num];
+    if (num < 100) return tens[Math.floor(num/10)] + (num%10?" "+ones[num%10]:"");
+    if (num < 1000) return ones[Math.floor(num/100)]+" Hundred"+(num%100?" "+convert(num%100):"");
+    if (num < 100000) return convert(Math.floor(num/1000))+" Thousand"+(num%1000?" "+convert(num%1000):"");
+    if (num < 10000000) return convert(Math.floor(num/100000))+" Lakh"+(num%100000?" "+convert(num%100000):"");
+    return convert(Math.floor(num/10000000))+" Crore"+(num%10000000?" "+convert(num%10000000):"");
+  }
+  const rupees = Math.floor(n);
+  const paisa  = Math.round((n - rupees) * 100);
+  let words = convert(rupees) + " Rupees";
+  if (paisa > 0) words += " And " + convert(paisa) + " Paisa";
+  return words + " Only";
+}
 
 function fmt(n) {
   return Number(n).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -73,7 +95,15 @@ export default function AdminInvoice() {
   const [editCompany, setEditCompany] = useState(false);
   const [search,      setSearch]      = useState("");
   const [showDrop,    setShowDrop]    = useState(false);
+
   const [saving,      setSaving]      = useState(false);
+
+  // Calculations for totals
+  const subtotal = items.reduce((s, i) => s + i.qty * i.rate, 0);
+  const discount = subtotal * (discountPct / 100);
+  const taxable = subtotal - discount;
+  const tax = taxEnabled ? taxable * TAX_RATE : 0;
+  const total = taxable + tax;
 
   /* ── Filtered products (live from Firebase) ── */
   const filtered = search.trim()
