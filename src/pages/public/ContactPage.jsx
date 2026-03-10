@@ -60,9 +60,10 @@ export default function ContactPage() {
       {/* Hero Header */}
       <div style={s.hero}>
         <div style={s.heroOverlay} />
+        <div style={s.heroGrid} />
         <div style={s.heroInner}>
           <span style={s.heroBadge}>&#9881; GET IN TOUCH</span>
-          <h1 className="page-title" style={s.heroTitle}>Contact Us</h1>
+          <h1 className="page-title" style={s.heroTitle}>Contact <span style={{ color: "#f59e0b" }}>Us</span></h1>
           <p style={s.heroDesc}>
             Need heavy equipment parts or have a question? Our team of experts is ready to help you find exactly what you need.
           </p>
@@ -196,28 +197,34 @@ const s = {
   page: { background: "#fafafa", minHeight: "100vh", fontFamily: "'Inter',system-ui,sans-serif" },
 
   hero: {
-    position: "relative", background: DARK,
-    padding: "80px 32px 64px", overflow: "hidden",
+    position: "relative", background: `linear-gradient(135deg, ${DARK} 0%, ${STEEL} 100%)`,
+    padding: "100px 32px 80px", overflow: "hidden",
   },
   heroOverlay: {
     position: "absolute", inset: 0,
-    background: "radial-gradient(circle at 60% 50%, rgba(217,119,6,0.05) 0%, transparent 50%)",
+    background: "radial-gradient(circle at 60% 50%, rgba(217,119,6,0.08) 0%, transparent 50%), radial-gradient(circle at 20% 80%, rgba(217,119,6,0.04) 0%, transparent 50%)",
+  },
+  heroGrid: {
+    position: "absolute", inset: 0, opacity: 0.03,
+    backgroundImage: "linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)",
+    backgroundSize: "60px 60px",
   },
   heroInner: { position: "relative", maxWidth: 1280, margin: "0 auto" },
   heroBadge: {
-    display: "inline-block", background: "rgba(217,119,6,0.08)", color: "#f59e0b",
+    display: "inline-block", background: "rgba(217,119,6,0.1)", color: "#f59e0b",
     fontSize: 11, fontWeight: 700, padding: "8px 20px", borderRadius: 100,
-    letterSpacing: 3, marginBottom: 20, border: "1px solid rgba(217,119,6,0.15)",
+    letterSpacing: 3, marginBottom: 20, border: "1px solid rgba(217,119,6,0.2)",
   },
   heroTitle: { fontSize: 48, fontWeight: 800, color: "#fff", margin: "0 0 16px", lineHeight: 1.1, letterSpacing: "-0.03em", fontFamily: "'Space Grotesk','Inter',sans-serif" },
-  heroDesc: { fontSize: 16, color: "#a3a3a3", lineHeight: 1.8, maxWidth: 600, margin: 0 },
+  heroDesc: { fontSize: 17, color: "#a3a3a3", lineHeight: 1.8, maxWidth: 600, margin: 0 },
 
   contentWrap: { maxWidth: 1280, margin: "0 auto", padding: "48px 32px 80px" },
   grid: { display: "grid", gridTemplateColumns: "1fr 1.3fr", gap: 36, alignItems: "start" },
 
   infoSide: { display: "flex", flexDirection: "column", gap: 24 },
   infoCard: {
-    background: DARK, borderRadius: 28, padding: "36px 32px", color: "#fff",
+    background: `linear-gradient(135deg, ${DARK} 0%, ${STEEL} 100%)`, borderRadius: 28, padding: "36px 32px", color: "#fff",
+    boxShadow: "0 20px 60px rgba(0,0,0,0.15)",
   },
   infoCardTitle: { fontSize: 22, fontWeight: 700, margin: "0 0 8px", color: "#fff", fontFamily: "'Space Grotesk','Inter',sans-serif" },
   infoCardDesc: { fontSize: 14, color: "#737373", margin: "0 0 28px" },
@@ -225,28 +232,30 @@ const s = {
   contactItem: { display: "flex", gap: 16, alignItems: "flex-start" },
   contactIconWrap: {
     width: 44, height: 44, borderRadius: 14, flexShrink: 0,
-    background: "rgba(217,119,6,0.08)", display: "flex", alignItems: "center", justifyContent: "center",
+    background: "rgba(217,119,6,0.1)", display: "flex", alignItems: "center", justifyContent: "center",
     fontSize: 18,
   },
   contactLabel: { fontSize: 11, fontWeight: 700, color: "#d97706", textTransform: "uppercase", letterSpacing: 2, marginBottom: 4 },
   contactDetail: { fontSize: 15, color: "#d4d4d4", lineHeight: 1.6, whiteSpace: "pre-line" },
-  divider: { height: 1, background: "rgba(255,255,255,0.06)", margin: "28px 0" },
+  divider: { height: 1, background: "rgba(255,255,255,0.08)", margin: "28px 0" },
   quickActions: { display: "flex", gap: 10 },
   waBtn: {
     flex: 1, padding: "14px", background: "#22c55e", color: "#fff", borderRadius: 14,
     textAlign: "center", textDecoration: "none", fontSize: 13, fontWeight: 700,
+    boxShadow: "0 4px 16px rgba(34,197,94,0.25)",
   },
   callBtn: {
-    flex: 1, padding: "14px", background: "rgba(255,255,255,0.04)", color: "#fff",
+    flex: 1, padding: "14px", background: "rgba(255,255,255,0.06)", color: "#fff",
     borderRadius: 14, textAlign: "center", textDecoration: "none", fontSize: 13, fontWeight: 700,
-    border: "1px solid rgba(255,255,255,0.08)",
+    border: "1px solid rgba(255,255,255,0.1)",
   },
 
   mapCard: {
-    borderRadius: 20, overflow: "hidden", border: "1px solid #e5e5e5",
+    borderRadius: 20, overflow: "hidden", border: "1.5px solid #e5e5e5",
+    boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
   },
   mapPlaceholder: {
-    background: STEEL, height: 160, display: "flex", alignItems: "center",
+    background: `linear-gradient(135deg, ${DARK} 0%, ${STEEL} 100%)`, height: 160, display: "flex", alignItems: "center",
     justifyContent: "center", gap: 10, flexDirection: "column",
   },
   mapIcon: { fontSize: 28 },
@@ -255,7 +264,7 @@ const s = {
   formCard: {
     background: "#fff", borderRadius: 28, padding: "44px 36px",
     boxShadow: "0 1px 3px rgba(0,0,0,0.04), 0 8px 40px rgba(0,0,0,0.06)",
-    border: "1px solid #f5f5f5",
+    border: "1.5px solid #f0f0f0",
   },
   formHeader: { marginBottom: 32 },
   formTitle: { fontSize: 24, fontWeight: 800, color: DARK, margin: "0 0 8px", fontFamily: "'Space Grotesk','Inter',sans-serif" },
@@ -275,11 +284,11 @@ const s = {
   errMsg: { display: "block", fontSize: 12, color: "#dc2626", marginTop: 6, fontWeight: 500 },
   submitBtn: {
     width: "100%", padding: "16px",
-    background: DARK,
+    background: `linear-gradient(135deg, ${DARK} 0%, ${STEEL} 100%)`,
     color: "#fff", borderRadius: 14, border: "none", fontSize: 15, fontWeight: 600,
     cursor: "pointer", marginTop: 8,
     letterSpacing: 0.3,
-    boxShadow: "0 4px 20px rgba(0,0,0,0.12)",
+    boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
   },
   formNote: { fontSize: 12, color: "#a3a3a3", textAlign: "center", marginTop: 16, marginBottom: 0 },
 
@@ -289,6 +298,6 @@ const s = {
   successDesc: { color: "#737373", fontSize: 15, margin: "0 0 28px", lineHeight: 1.7 },
   resetBtn: {
     padding: "14px 32px", background: "#fafafa", color: "#525252",
-    borderRadius: 14, border: "1px solid #e5e5e5", cursor: "pointer", fontWeight: 600, fontSize: 14,
+    borderRadius: 14, border: "1.5px solid #e5e5e5", cursor: "pointer", fontWeight: 600, fontSize: 14,
   },
 };

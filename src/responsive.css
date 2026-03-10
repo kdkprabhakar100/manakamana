@@ -71,14 +71,111 @@ a:active, button:active {
 
 /* ── Premium card hover effects ── */
 .products-grid > div,
-.admin-products-grid > div {
+.admin-products-grid > div,
+.product-card {
   transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.5s cubic-bezier(0.16, 1, 0.3, 1) !important;
   cursor: pointer;
 }
 .products-grid > div:hover,
-.admin-products-grid > div:hover {
+.admin-products-grid > div:hover,
+.product-card:hover {
   transform: translateY(-8px) scale(1.01) !important;
   box-shadow: 0 20px 60px rgba(0,0,0,0.12), 0 4px 20px rgba(0,0,0,0.08) !important;
+}
+/* Image zoom on product card hover */
+.product-card:hover img {
+  transform: scale(1.08) !important;
+}
+
+/* ── Floating WhatsApp button ── */
+.floating-wa-btn {
+  transition: transform 0.3s cubic-bezier(0.16,1,0.3,1), box-shadow 0.3s ease !important;
+  animation: float 3s ease-in-out infinite;
+}
+.floating-wa-btn:hover {
+  transform: translateY(-4px) scale(1.1) !important;
+  box-shadow: 0 8px 32px rgba(34,197,94,0.5) !important;
+}
+
+/* ── Category card hover ── */
+.cat-card {
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+.cat-card:hover {
+  transform: translateY(-6px) !important;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.08) !important;
+  border-color: #fde68a !important;
+}
+
+/* ── Feature card hover + glow ── */
+.feature-card {
+  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+.feature-card:hover {
+  transform: translateY(-8px) !important;
+  border-color: rgba(217,119,6,0.2) !important;
+  box-shadow: 0 0 40px rgba(217,119,6,0.08), 0 20px 60px rgba(0,0,0,0.2) !important;
+}
+
+/* ── Process card hover ── */
+.process-card {
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+.process-card:hover {
+  transform: translateY(-6px) !important;
+  border-color: rgba(217,119,6,0.15) !important;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.15) !important;
+}
+
+/* ── Testimonial card hover ── */
+.testimonial-card {
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+.testimonial-card:hover {
+  transform: translateY(-6px) !important;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.08) !important;
+  border-color: #fde68a !important;
+}
+
+/* ── Brand card hover ── */
+.brand-card {
+  transition: all 0.3s ease !important;
+}
+.brand-card:hover {
+  background: rgba(255,255,255,0.06) !important;
+  border-color: rgba(217,119,6,0.2) !important;
+}
+
+/* ── Nav link hover ── */
+.nav-link-item {
+  transition: all 0.3s ease !important;
+}
+.nav-link-item:hover {
+  transform: translateY(0) !important;
+  opacity: 1 !important;
+}
+
+/* ── Brand Carousel Animation ── */
+@keyframes scrollBrands {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+/* ── Pulse animation for badge dot ── */
+@keyframes pulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 12px rgba(34,197,94,0.6); }
+  50% { opacity: 0.7; box-shadow: 0 0 20px rgba(34,197,94,0.8); }
+}
+
+@keyframes gradientMove {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 /* ── Focus styles for accessibility ── */
@@ -116,13 +213,31 @@ input:focus, textarea:focus, select:focus {
   .hero-card   { padding: 16px 12px !important; }
 
   /* Section titles */
-  .section-title { font-size: 24px !important; }
+  .section-title { font-size: 28px !important; }
   .page-title    { font-size: 26px !important; }
+
+  /* Category grid */
+  .cat-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 14px !important;
+  }
+
+  /* Feature grid */
+  .feature-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 14px !important;
+  }
 
   /* Process grid */
   .process-grid {
-    grid-template-columns: 1fr 1fr !important;
+    grid-template-columns: 1fr !important;
     gap: 14px !important;
+  }
+
+  /* Testimonials */
+  .testimonial-grid {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
   }
 
   /* Footer */
@@ -171,6 +286,15 @@ input:focus, textarea:focus, select:focus {
   }
   .product-modal-inner {
     grid-template-columns: 1fr !important;
+  }
+
+  /* Floating WA button - smaller on tablet */
+  .floating-wa-btn {
+    width: 52px !important;
+    height: 52px !important;
+    bottom: 20px !important;
+    right: 20px !important;
+    font-size: 24px !important;
   }
 
   /* Admin Dashboard */
@@ -313,19 +437,36 @@ input:focus, textarea:focus, select:focus {
 @media (max-width: 480px) {
 
   .hero-inner    { padding: 0 !important; }
-  .hero-title    { font-size: 26px !important; line-height: 1.15 !important; }
+  .hero-title    { font-size: 28px !important; line-height: 1.15 !important; }
   .hero-desc     { font-size: 14px !important; }
   .hero-right    { grid-template-columns: 1fr 1fr !important; gap: 8px !important; }
   .hero-card     { padding: 12px 8px !important; }
   .hero-card-val   { font-size: 20px !important; }
   .hero-card-label { font-size: 9px !important; }
-  .hero-btns a   { padding: 10px 18px !important; font-size: 13px !important; }
+  .hero-btns a   { padding: 12px 20px !important; font-size: 13px !important; }
   .hero-trust    { flex-wrap: wrap !important; gap: 8px !important; }
 
-  .section-title { font-size: 20px !important; }
+  .section-title { font-size: 22px !important; }
   .page-title    { font-size: 22px !important; }
 
+  /* Category grid - single col on phone */
+  .cat-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  /* Feature grid - single col */
+  .feature-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
   .process-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  .testimonial-grid {
     grid-template-columns: 1fr !important;
     gap: 12px !important;
   }
@@ -418,6 +559,11 @@ input:focus, textarea:focus, select:focus {
 @keyframes float {
   0%, 100% { transform: translateY(0px); }
   50% { transform: translateY(-10px); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
 }
 
 /* ── Selection color ── */

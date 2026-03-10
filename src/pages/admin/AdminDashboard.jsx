@@ -332,40 +332,41 @@ export default function AdminDashboard() {
 
 /* ── Styles ──────────────────────────────────────────────────────────── */
 const st = {
-  page: { padding: "28px 32px 48px", maxWidth: 1200, margin: "0 auto" },
+  page: { padding: "28px 32px 48px", maxWidth: 1200, margin: "0 auto", fontFamily: "'Inter',system-ui,sans-serif" },
 
   /* Page head */
   pageHead: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 28, flexWrap: "wrap", gap: 16 },
-  pageTitle: { fontSize: 26, fontWeight: 700, color: "#0f172a", margin: 0, letterSpacing: -0.5 },
-  pageSub: { fontSize: 14, color: "#64748b", margin: "4px 0 0" },
+  pageTitle: { fontSize: 28, fontWeight: 800, color: "#0f172a", margin: 0, letterSpacing: -0.5, fontFamily: "'Space Grotesk','Inter',sans-serif" },
+  pageSub: { fontSize: 14, color: "#64748b", margin: "6px 0 0" },
   headActions: { display: "flex", gap: 10 },
   primaryBtn: {
     display: "inline-flex", alignItems: "center", gap: 8,
-    background: "#6366f1", color: "#fff",
-    padding: "10px 20px", borderRadius: 10, fontSize: 13, fontWeight: 600,
+    background: "linear-gradient(135deg, #6366f1, #4f46e5)", color: "#fff",
+    padding: "11px 22px", borderRadius: 12, fontSize: 13, fontWeight: 600,
     textDecoration: "none", border: "none",
-    boxShadow: "0 1px 3px rgba(99,102,241,0.3)",
+    boxShadow: "0 4px 16px rgba(99,102,241,0.3)",
   },
 
   /* Stats */
   statsGrid: { display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 20, marginBottom: 24 },
   statCard: {
-    background: "#fff", borderRadius: 14, padding: "22px 24px",
+    background: "#fff", borderRadius: 18, padding: "22px 24px",
     boxShadow: "0 1px 3px rgba(0,0,0,0.04), 0 6px 24px rgba(0,0,0,0.03)",
+    border: "1px solid #f1f5f9",
     transition: "transform 0.2s ease, box-shadow 0.2s ease",
   },
   statIconWrap: {
-    width: 44, height: 44, borderRadius: 12,
+    width: 48, height: 48, borderRadius: 14,
     display: "flex", alignItems: "center", justifyContent: "center",
   },
   statChange: { fontSize: 12, fontWeight: 600, display: "flex", alignItems: "center", gap: 2 },
-  statValue: { fontSize: 28, fontWeight: 700, color: "#0f172a", margin: "16px 0 4px", letterSpacing: -0.5 },
+  statValue: { fontSize: 28, fontWeight: 800, color: "#0f172a", margin: "16px 0 4px", letterSpacing: -0.5, fontFamily: "'Space Grotesk','Inter',sans-serif" },
   statLabel: { fontSize: 13, color: "#64748b", fontWeight: 500 },
 
   /* Alert */
   alertBanner: {
     display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12,
-    background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 12,
+    background: "linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)", border: "1px solid #fde68a", borderRadius: 16,
     padding: "14px 20px", marginBottom: 24,
   },
   alertIcon: { fontSize: 20 },
@@ -374,23 +375,25 @@ const st = {
   /* Chart row */
   chartRow: { display: "grid", gridTemplateColumns: "1.6fr 1fr", gap: 20, marginBottom: 24 },
   chartCard: {
-    background: "#fff", borderRadius: 14, padding: "24px",
+    background: "#fff", borderRadius: 18, padding: "24px",
     boxShadow: "0 1px 3px rgba(0,0,0,0.04), 0 6px 24px rgba(0,0,0,0.03)",
+    border: "1px solid #f1f5f9",
   },
   chartHeader: { display: "flex", justifyContent: "space-between", alignItems: "flex-start" },
-  chartTitle: { fontSize: 16, fontWeight: 600, color: "#0f172a", margin: 0 },
+  chartTitle: { fontSize: 16, fontWeight: 700, color: "#0f172a", margin: 0, fontFamily: "'Space Grotesk','Inter',sans-serif" },
   chartSub: { fontSize: 12, color: "#94a3b8", margin: "2px 0 0" },
   chartTotal: { textAlign: "right" },
-  chartTotalValue: { display: "block", fontSize: 22, fontWeight: 700, color: "#0f172a", letterSpacing: -0.5 },
+  chartTotalValue: { display: "block", fontSize: 22, fontWeight: 800, color: "#0f172a", letterSpacing: -0.5, fontFamily: "'Space Grotesk','Inter',sans-serif" },
   chartTotalLabel: { fontSize: 11, color: "#94a3b8", fontWeight: 500 },
 
   /* Activity */
   activityCard: {
-    background: "#fff", borderRadius: 14, padding: "24px",
+    background: "#fff", borderRadius: 18, padding: "24px",
     boxShadow: "0 1px 3px rgba(0,0,0,0.04), 0 6px 24px rgba(0,0,0,0.03)",
+    border: "1px solid #f1f5f9",
   },
   actItem: { display: "flex", alignItems: "flex-start", gap: 12, padding: "14px 0" },
-  actDot: { width: 28, height: 28, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 2 },
+  actDot: { width: 32, height: 32, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 2 },
   actText: { fontSize: 13, color: "#0f172a", fontWeight: 500, lineHeight: 1.4 },
   actDetail: { fontSize: 12, color: "#94a3b8", marginTop: 2 },
   actTime: { fontSize: 11, color: "#cbd5e1", whiteSpace: "nowrap", flexShrink: 0, marginTop: 2 },
@@ -400,25 +403,27 @@ const st = {
   qaGrid: { display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 16, marginTop: 14 },
   qaCard: {
     display: "flex", flexDirection: "column", alignItems: "center", gap: 10,
-    background: "#fff", borderRadius: 14, padding: "24px 16px",
+    background: "#fff", borderRadius: 18, padding: "24px 16px",
     textDecoration: "none",
     boxShadow: "0 1px 3px rgba(0,0,0,0.04), 0 6px 24px rgba(0,0,0,0.03)",
+    border: "1px solid #f1f5f9",
     transition: "transform 0.2s ease, box-shadow 0.2s ease",
   },
   qaIconWrap: {
-    width: 48, height: 48, borderRadius: 14,
+    width: 52, height: 52, borderRadius: 16,
     display: "flex", alignItems: "center", justifyContent: "center",
   },
   qaLabel: { fontSize: 13, fontWeight: 600, color: "#334155" },
 
   /* Section */
-  sectionTitle: { fontSize: 16, fontWeight: 600, color: "#0f172a", margin: "0 0 4px" },
+  sectionTitle: { fontSize: 16, fontWeight: 700, color: "#0f172a", margin: "0 0 4px", fontFamily: "'Space Grotesk','Inter',sans-serif" },
 
   /* Table */
   tableCard: {
-    background: "#fff", borderRadius: 14,
+    background: "#fff", borderRadius: 18,
     boxShadow: "0 1px 3px rgba(0,0,0,0.04), 0 6px 24px rgba(0,0,0,0.03)",
-    marginBottom: 24,
+    border: "1px solid #f1f5f9",
+    marginBottom: 24, overflow: "hidden",
   },
   tableHeader: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "20px 24px 16px" },
   viewAll: { fontSize: 13, color: "#6366f1", fontWeight: 600, textDecoration: "none" },
@@ -427,25 +432,25 @@ const st = {
     padding: "10px 24px", fontSize: 11, fontWeight: 600, color: "#94a3b8",
     textTransform: "uppercase", letterSpacing: 0.8,
     borderBottom: "1px solid #f1f5f9", textAlign: "left",
-    background: "#fafbfc",
+    background: "#f8fafc",
   },
   tr: { transition: "background 0.15s ease" },
   td: { padding: "14px 24px", fontSize: 13, borderBottom: "1px solid #f8fafc", color: "#334155" },
-  invNo: { fontWeight: 600, color: "#0f172a", fontFamily: "'Space Grotesk','Inter',monospace" },
+  invNo: { fontWeight: 700, color: "#0f172a", fontFamily: "'Space Grotesk','Inter',monospace" },
   clientCell: { display: "flex", alignItems: "center", gap: 10 },
   clientAvatar: {
-    width: 28, height: 28, borderRadius: "50%",
-    background: "#e0e7ff", color: "#6366f1",
-    fontSize: 11, fontWeight: 700,
+    width: 32, height: 32, borderRadius: 10,
+    background: "linear-gradient(135deg, #e0e7ff, #c7d2fe)", color: "#6366f1",
+    fontSize: 12, fontWeight: 700,
     display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
   },
   statusBadge: {
-    display: "inline-block", padding: "4px 10px", borderRadius: 20,
+    display: "inline-block", padding: "4px 12px", borderRadius: 20,
     fontSize: 11, fontWeight: 600, letterSpacing: 0.3,
   },
   viewBtn: {
     display: "inline-flex", alignItems: "center", justifyContent: "center",
-    width: 32, height: 32, borderRadius: 8,
+    width: 32, height: 32, borderRadius: 10,
     color: "#6366f1", background: "#eef2ff",
     textDecoration: "none",
     transition: "background 0.15s ease",
@@ -454,12 +459,12 @@ const st = {
   /* Messages */
   msgRow: { display: "flex", alignItems: "center", gap: 14, padding: "14px 24px" },
   msgAvatar: {
-    width: 36, height: 36, borderRadius: "50%",
+    width: 40, height: 40, borderRadius: 12,
     display: "flex", alignItems: "center", justifyContent: "center",
     fontSize: 14, fontWeight: 700, flexShrink: 0,
   },
   newBadge: {
-    background: "#ef4444", color: "#fff", fontSize: 9, fontWeight: 700,
-    padding: "2px 6px", borderRadius: 8, letterSpacing: 0.5,
+    background: "linear-gradient(135deg, #ef4444, #dc2626)", color: "#fff", fontSize: 9, fontWeight: 700,
+    padding: "2px 8px", borderRadius: 8, letterSpacing: 0.5,
   },
 };

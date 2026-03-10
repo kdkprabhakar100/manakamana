@@ -1,5 +1,5 @@
 import React, { Suspense, lazy } from "react";
-import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Link, useLocation } from "react-router-dom";
 import { AuthProvider } from "./hooks/useAuth";
 import { ContactsProvider } from "./hooks/useContacts";
 import { AdminRoute, PublicRoute } from "./components/common/RouteGuards";
@@ -27,10 +27,12 @@ const AdminInvoices = lazy(() => import("./pages/admin/AdminInvoices"));
 const AdminMessages = lazy(() => import("./pages/admin/AdminMessages"));
 
 function Layout({ children, hideFooter }) {
+  const location = useLocation();
+  const isHome = location.pathname === "/";
   return (
     <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
       <Navbar />
-      <main style={{ flex: 1 }}>{children}</main>
+      <main style={{ flex: 1, paddingTop: isHome ? 0 : 75 }}>{children}</main>
       {!hideFooter && <Footer />}
     </div>
   );
