@@ -3,66 +3,79 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useProducts } from "../../hooks/useProducts";
 import { useInvoices } from "../../hooks/useInvoices";
 
-const TAX_RATE = 0.18;
+const TAX_RATE = 0.13;
 
 function fmt(n) {
-  return "Rs" + Number(n).toLocaleString("en-IN", { minimumFractionDigits: 2 });
+  return Number(n).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-let _counter = 1001;
+/* ── Convert number to words (Nepali style) ── */
+function numberToWords(n) {
+  if (n === 0) return "Zero";
+  const ones = ["","One","Two","Three","Four","Five","Six","Seven","Eight","Nine",
+    "Ten","Eleven","Twelve","Thirteen","Fourteen","Fifteen","Sixteen","Seventeen","Eighteen","Nineteen"];
+  const tens = ["","","Twenty","Thirty","Forty","Fifty","Sixty","Seventy","Eighty","Ninety"];
+  function convert(num) {
+    if (num < 20) return ones[num];
+    if (num < 100) return tens[Math.floor(num/10)] + (num%10?" "+ones[num%10]:"");
+    if (num < 1000) return ones[Math.floor(num/100)]+" Hundred"+(num%100?" "+convert(num%100):"");
+    if (num < 100000) return convert(Math.floor(num/1000))+" Thousand"+(num%1000?" "+convert(num%1000):"");
+    if (num < 10000000) return convert(Math.floor(num/100000))+" Lakh"+(num%100000?" "+convert(num%100000):"");
+    return convert(Math.floor(num/10000000))+" Crore"+(num%10000000?" "+convert(num%10000000):"");
+  }
+  const rupees = Math.floor(n);
+  const paisa  = Math.round((n - rupees) * 100);
+  let words = convert(rupees) + " Rupees";
+  if (paisa > 0) words += " And " + convert(paisa) + " Paisa";
+  return words + " Only";
+}
+
+/* ── Nepali fiscal year: starts mid-July (Shrawan 1) ── */
+function getFiscalYear() {
+  const now  = new Date();
+  const year = now.getFullYear();
+  const bsYear = year + 56; // approximate BS year
+  const cutoff = new Date(year, 6, 16); // ~July 16
+  if (now >= cutoff) return `FY${bsYear}/${(bsYear+1).toString().slice(-3)}`;
+  return `FY${bsYear-1}/${bsYear.toString().slice(-3)}`;
+}
+
+const INV_KEY = "manakamana_inv_counter";
 function newInvoiceNo() {
-  const ts = Date.now().toString(36).toUpperCase();
-  return `EST-${new Date().getFullYear()}-${ts}-${_counter++}`;
+  const n = parseInt(localStorage.getItem(INV_KEY) || "0", 10) + 1;
+  localStorage.setItem(INV_KEY, String(n));
+  return `SB-${String(n).padStart(5, "0")}`;
 }
 
 export default function AdminInvoice() {
-  const { id }        = useParams();              // if editing existing
-  const navigate      = useNavigate();
-  const printRef      = useRef();
+  const { id }     = useParams();
+  const navigate   = useNavigate();
+  const printRef   = useRef();
 
-  const { products, updateProduct }             = useProducts();   // ← Live from Firebase
+  const { products }                            = useProducts();
   const { invoices, saveInvoice, updateInvoice } = useInvoices();
 
-  /* ── Load existing invoice when editing ── */
-  useEffect(() => {
-    if (id && id !== "new") {
-      const existing = invoices.find(i => i.id === id);
-      if (existing) {
-        setInvoiceNo(existing.invoiceNo || newInvoiceNo());
-        setInvoiceDate(existing.invoiceDate || today());
-        setDueDate(existing.dueDate || "");
-        setDocType(existing.docType || "Estimate");
-        setClient(existing.client || EMPTY_CLIENT);
-        setItems(existing.items || []);
-        setDiscountPct(existing.discountPct || 0);
-        setTaxEnabled(existing.taxEnabled ?? true);
-        setNotes(existing.notes || DEFAULT_NOTES);
-        setTerms(existing.terms || DEFAULT_TERMS);
-        setCompany(existing.company || DEFAULT_COMPANY);
-      }
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, invoices]);
-
-  const today = () => new Date().toISOString().slice(0, 10);
+  const today = () => new Date().toISOString().slice(0,10);
 
   const DEFAULT_COMPANY = {
-    name: "Manakamana Heavy Equipments Pvt. Ltd.",
+    name:    "Manakamana Heavy Equipments Pvt. Ltd.",
+    fy:      getFiscalYear(),
     address: "Kritipur, Chovar, Bagmati Province, Nepal",
-    city: "Kathmandu, Nepal",
-    phone: "+977-9851068337",
-    email: "mhektm@gmail.com",
-    gstin: "XXXXXXXXXXXXXXXXX",
-    billNo: "",
+    city:    "Kathmandu, Nepal",
+    phone:   "+977-9851068337",
+    email:   "mhektm@gmail.com",
+    pan:     "XXXXXXXXX",
+    billNo:  "",
   };
-  const EMPTY_CLIENT = { name:"", company:"", address:"", phone:"", email:"", gstin:"" };
-  const DEFAULT_NOTES = "Thank you for your business!\nAll prices are in NPR unless stated otherwise.";
+
+  const EMPTY_CLIENT = { name:"", company:"", address:"", phone:"", email:"", gstin:"", payment:"Cash/Credit" };
+  const DEFAULT_NOTES = "";
   const DEFAULT_TERMS = "Payment due within 30 days.\nGoods once sold will not be taken back.";
 
   const [invoiceNo,   setInvoiceNo]   = useState(newInvoiceNo);
   const [invoiceDate, setInvoiceDate] = useState(today());
   const [dueDate,     setDueDate]     = useState("");
-  const [docType,     setDocType]     = useState("Estimate");
+  const [docType,     setDocType]     = useState("Invoice");
   const [company,     setCompany]     = useState(DEFAULT_COMPANY);
   const [client,      setClient]      = useState(EMPTY_CLIENT);
   const [items,       setItems]       = useState([]);
@@ -75,7 +88,35 @@ export default function AdminInvoice() {
   const [showDrop,    setShowDrop]    = useState(false);
   const [saving,      setSaving]      = useState(false);
 
-  /* ── Filtered products (live from Firebase) ── */
+  /* ── Load existing invoice ── */
+  useEffect(() => {
+    if (id && id !== "new") {
+      const existing = invoices.find(i => i.id === id);
+      if (existing) {
+        setInvoiceNo(existing.invoiceNo || newInvoiceNo());
+        setInvoiceDate(existing.invoiceDate || today());
+        setDueDate(existing.dueDate || "");
+        setDocType(existing.docType || "Invoice");
+        setClient(existing.client || EMPTY_CLIENT);
+        setItems(existing.items || []);
+        setDiscountPct(existing.discountPct || 0);
+        setTaxEnabled(existing.taxEnabled ?? true);
+        setNotes(existing.notes || DEFAULT_NOTES);
+        setTerms(existing.terms || DEFAULT_TERMS);
+        setCompany(existing.company || DEFAULT_COMPANY);
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, invoices]);
+
+  /* ── Calculations ── */
+  const subtotal = items.reduce((s,i) => s + i.qty * i.rate, 0);
+  const discount = subtotal * (discountPct / 100);
+  const taxable  = subtotal - discount;
+  const tax      = taxEnabled ? taxable * TAX_RATE : 0;
+  const total    = taxable + tax;
+
+  /* ── Product search ── */
   const filtered = search.trim()
     ? products.filter(p =>
         p.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -83,19 +124,9 @@ export default function AdminInvoice() {
       )
     : products;
 
-  /* ── Add product to line items ── */
   function addProduct(product) {
-    const stock = product.quantity !== undefined ? Number(product.quantity) : 0;
-    if (stock <= 0) {
-      alert(`❌ "${product.name}" is out of stock (0 units). Cannot add to invoice.`);
-      return;
-    }
     const exists = items.find(i => i.productId === product.id);
     if (exists) {
-      if (exists.qty >= stock) {
-        alert(`⚠️ Only ${stock} unit(s) of "${product.name}" available in stock.`);
-        return;
-      }
       setItems(prev => prev.map(i =>
         i.productId === product.id ? { ...i, qty: i.qty + 1 } : i
       ));
@@ -103,80 +134,39 @@ export default function AdminInvoice() {
       setItems(prev => [...prev, {
         id: Date.now() + Math.random(),
         productId: product.id,
-        name: product.name,
-        unit: product.unit || "Nos",
-        qty: 1,
-        rate: Number(product.price) || 0,
+        hsCode:    product.hsCode || "",
+        name:      product.name,
+        unit:      product.unit || "NOS",
+        qty:       1,
+        rate:      Number(product.price) || 0,
       }]);
     }
     setSearch("");
+    setShowDrop(false);
   }
 
-  const removeItem = (id) => setItems(p => p.filter(i => i.id !== id));
-
-  const updateItem = (id, field, value) =>
-    setItems(prev => prev.map(i => {
-      if (i.id !== id) return i;
-      if (field === "qty" && i.productId) {
-        const prod = products.find(p => p.id === i.productId);
-        const stock = prod?.quantity !== undefined ? Number(prod.quantity) : Infinity;
-        const newQty = Math.min(Math.max(1, Number(value) || 0), stock);
-        return { ...i, qty: newQty };
-      }
-      return { ...i, [field]: field==="name"||field==="unit" ? value : Number(value)||0 };
-    }));
-
-  const changeQty = (id, delta) =>
-    setItems(prev => prev.map(i => {
-      if (i.id !== id) return i;
-      const prod = i.productId ? products.find(p => p.id === i.productId) : null;
-      const stock = prod?.quantity !== undefined ? Number(prod.quantity) : Infinity;
-      const newQty = Math.min(Math.max(1, i.qty + delta), stock);
-      if (newQty === i.qty && delta > 0) return i; // already at max
-      return { ...i, qty: newQty };
-    }
+  const removeItem  = (id) => setItems(p => p.filter(i => i.id !== id));
+  const updateItem  = (id, field, value) =>
+    setItems(prev => prev.map(i =>
+      i.id === id
+        ? { ...i, [field]: ["name","unit","hsCode"].includes(field) ? value : Number(value)||0 }
+        : i
+    ));
+  const changeQty   = (id, delta) =>
+    setItems(prev => prev.map(i =>
+      i.id === id ? { ...i, qty: Math.max(1, i.qty + delta) } : i
     ));
 
-  /* ── Calculations ── */
-  const subtotal = items.reduce((s,i) => s + i.qty*i.rate, 0);
-  const discount = subtotal * (discountPct/100);
-  const taxable  = subtotal - discount;
-  const tax      = taxEnabled ? taxable * TAX_RATE : 0;
-  const total    = taxable + tax;
-
-  /* ── Save to Firebase ── */
+  /* ── Save ── */
   const handleSave = async () => {
-    /* ── Validate required fields ── */
-    const missing = [];
-    if (!client.name.trim())    missing.push("Client Name");
-    if (!client.company.trim()) missing.push("Company");
-    if (!client.address.trim()) missing.push("Address");
-    if (!invoiceDate)           missing.push("Date");
-    if (!docType)               missing.push("Type");
-    if (items.length === 0)     missing.push("At least one product/service");
-    if (missing.length > 0) {
-      alert(`Please fill all required fields before saving:\n\n• ${missing.join('\n• ')}`);
+    if (!client.name.trim()) {
+      alert("Please fill Client Name (required).");
       return;
     }
-
-    /* ── Validate stock before saving ── */
-    const stockErrors = [];
-    for (const item of items) {
-      if (!item.productId) continue;
-      const prod = products.find(p => p.id === item.productId);
-      if (!prod) continue;
-      const stock = prod.quantity !== undefined ? Number(prod.quantity) : 0;
-      if (stock <= 0) {
-        stockErrors.push(`❌ ${prod.name} — out of stock (0 units)`);
-      } else if (item.qty > stock) {
-        stockErrors.push(`⚠️ ${prod.name} — only ${stock} in stock, but ${item.qty} requested`);
-      }
-    }
-    if (stockErrors.length > 0) {
-      alert(`Cannot save invoice — stock issues:\n\n${stockErrors.join('\n')}\n\nPlease adjust quantities or restock.`);
+    if (items.length === 0) {
+      alert("Please add at least one product.");
       return;
     }
-
     setSaving(true);
     const data = {
       invoiceNo, invoiceDate, dueDate, docType,
@@ -186,169 +176,190 @@ export default function AdminInvoice() {
       clientName: client.name,
     };
     try {
-      const isNewInvoice = !(id && id !== "new");
-      if (id && id !== "new") {
-        await updateInvoice(id, data);
-      } else {
-        await saveInvoice(data);
-      }
-
-      /* ── Deduct stock quantity ONLY for NEW invoices (not edits) ── */
-      if (isNewInvoice) {
-        const lowStockAlerts = [];
-        for (const item of items) {
-          if (!item.productId) continue;
-          const prod = products.find(p => p.id === item.productId);
-          if (!prod) continue;
-          const currentQty = prod.quantity !== undefined ? Number(prod.quantity) : 0;
-          const newQty = Math.max(0, currentQty - item.qty);
-          try {
-            await updateProduct(prod.id, { quantity: newQty });
-            if (newQty < 5) {
-              lowStockAlerts.push(`${prod.name} (${newQty} left)`);
-            }
-          } catch (err) {
-            console.error(`Failed to deduct stock for ${prod.name}:`, err);
-          }
-        }
-
-        if (lowStockAlerts.length > 0) {
-          alert(`⚠️ Low Stock Alert!\n\nThe following products now have less than 5 units:\n• ${lowStockAlerts.join('\n• ')}\n\nPlease restock soon.`);
-        }
-      }
-
+      if (id && id !== "new") await updateInvoice(id, data);
+      else await saveInvoice(data);
       navigate("/admin/invoices");
     } finally {
       setSaving(false);
     }
   };
 
-  /* ── Print (XSS-safe: cloneNode instead of raw innerHTML) ── */
- const handlePrint = () => {
-  const safeTitle = `${docType} ${invoiceNo}`.replace(/[<>"'&]/g, "");
-  const w = window.open("", "_blank");
+  const handlePrint = () => {
+    const now = new Date();
+    const printTime = now.toLocaleDateString("en-IN") + " " +
+      now.toLocaleTimeString("en-IN", { hour:"2-digit", minute:"2-digit", hour12:true });
+    const timeStr = now.toLocaleTimeString("en-IN", { hour:"2-digit", minute:"2-digit", hour12:false });
 
-  w.document.write(`
-  <html>
-  <head>
-    <title>${safeTitle}</title>
+    const rows = items.map((item, idx) => `
+      <tr style="height:24px">
+        <td class="c">${idx + 1}</td>
+        <td class="c">${item.hsCode || ""}</td>
+        <td class="l">${item.name}</td>
+        <td class="c">${fmt(item.qty)}</td>
+        <td class="c">${item.unit}</td>
+        <td class="r">${fmt(item.rate)}</td>
+        <td class="r">${fmt(item.qty * item.rate)}</td>
+      </tr>`).join("");
 
-    <style>
-      *{
-        box-sizing:border-box;
-        margin:0;
-        padding:0;
-      }
+    // Fill with blank rows so the table always takes a full A4 page (min 20 rows)
+    const MIN_ROWS = 20;
+    const fillerCount = Math.max(0, MIN_ROWS - items.length);
+    const fillerRows = Array.from({length: fillerCount}, () => `
+      <tr style="height:24px">
+        <td style="border:1px solid #000"></td>
+        <td style="border:1px solid #000"></td>
+        <td style="border:1px solid #000"></td>
+        <td style="border:1px solid #000"></td>
+        <td style="border:1px solid #000"></td>
+        <td style="border:1px solid #000"></td>
+        <td style="border:1px solid #000"></td>
+      </tr>`).join("");
 
-      body{
-        font-family:'Inter','Segoe UI',sans-serif;
-        color:#1e293b;
-        background:#fff;
-      }
+    // Blank left cell (SNo+HSCode+Product width) for rows after In Words — no inner borders
+    const blankLeft = `<td colspan="3" style="border-left:1px solid #000;border-right:1px solid #000;border-top:none;border-bottom:none;background:#fff"></td>`;
+    const blankLeftLast = `<td colspan="3" style="border-left:1px solid #000;border-right:1px solid #000;border-top:none;border-bottom:1px solid #000;background:#fff"></td>`;
 
-      .wrap{
-        padding:40px 50px;
-        max-width:900px;
-        margin:0 auto;
-      }
+    const discountRow = discountPct > 0 ? `
+      <tr class="trow">
+        ${blankLeft}
+        <td colspan="2" class="r" style="border-right:1px solid #000">Discount (${discountPct}%)</td>
+        <td class="c" style="border-right:1px solid #000">:</td>
+        <td class="r">${fmt(discount)}</td>
+      </tr>` : "";
 
-      table{
-        width:100%;
-        border-collapse:collapse;
-      }
+    const vatRow = taxEnabled ? `
+      <tr class="trow">
+        ${blankLeft}
+        <td colspan="2" class="r" style="border-right:1px solid #000;font-weight:600">13% VAT</td>
+        <td class="c" style="border-right:1px solid #000">:</td>
+        <td class="r">${fmt(tax)}</td>
+      </tr>` : "";
 
-      th,td{
-        padding:9px 11px;
-        text-align:left;
-        font-size:12px;
-      }
+    const totalsBlock = `
+      <tr class="trow">
+        <td colspan="3" style="border:1px solid #000;border-bottom:none;padding:8px 10px;font-size:11px;vertical-align:bottom;background:#fff">
+          <b>In Words :</b> ${numberToWords(total)}
+        </td>
+        <td colspan="2" class="r" style="font-weight:600;border-right:1px solid #000">Sub Total</td>
+        <td class="c" style="border-right:1px solid #000">:</td>
+        <td class="r"><b>${fmt(subtotal)}</b></td>
+      </tr>
+      ${discountRow}
+      <tr class="trow">
+        ${blankLeft}
+        <td colspan="2" class="r" style="border-right:1px solid #000">Taxable Value</td>
+        <td class="c" style="border-right:1px solid #000">:</td>
+        <td class="r">${fmt(taxable)}</td>
+      </tr>
+      ${vatRow}
+      <tr class="tgrand">
+        ${blankLeftLast}
+        <td colspan="2" class="r" style="border-right:1px solid #000">Total Amount</td>
+        <td class="c" style="border-right:1px solid #000">:</td>
+        <td class="r">${fmt(total)}</td>
+      </tr>`;
 
-      /* MULTI PAGE SUPPORT */
-
-      thead{
-        display:table-header-group;
-      }
-
-      tfoot{
-        display:table-footer-group;
-      }
-
-      tr{
-        page-break-inside:avoid;
-      }
-
-      table{
-        page-break-inside:auto;
-      }
-
-      /* PRINT SETTINGS */
-
-      @page{
-        size:A4;
-        margin:20mm;
-      }
-
-      @media print{
-
-        body{
-          margin:0;
-        }
-
-        .wrap{
-          padding:0;
-        }
-
-        .invoice-doc{
-          max-height:none !important;
-          overflow:visible !important;
-        }
-
-        table{
-          page-break-inside:auto;
-        }
-
-        tr{
-          page-break-inside:avoid;
-          page-break-after:auto;
-        }
-
-        thead{
-          display:table-header-group;
-        }
-
-      }
-    </style>
-
-  </head>
-
-  <body>
-    <div class="wrap" id="print-root"></div>
-  </body>
-  </html>
-  `);
-
-  w.document.close();
-
-  const clone = printRef.current.cloneNode(true);
-
-  clone.querySelectorAll("script").forEach(el => el.remove());
-
-  w.document.getElementById("print-root").appendChild(clone);
-
-  w.focus();
-
-  setTimeout(() => {
-    w.print();
-    w.close();
-  }, 500);
-};
+    const w = window.open("", "_blank");
+    w.document.write(`<!DOCTYPE html>
+<html><head>
+<meta charset="UTF-8"/>
+<title>${docType} ${invoiceNo}</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Arial',sans-serif;font-size:11px;color:#000;background:#fff}
+.wrap{width:210mm;margin:0 auto;padding:10mm 13mm 8mm}
+.co-name{font-size:17px;font-weight:bold;text-align:center;text-transform:uppercase;letter-spacing:.5px}
+.co-sub{font-size:11px;text-align:center;margin:3px 0 5px}
+.hr1{border-top:2.5px solid #000;margin-bottom:1px}
+.hr2{border-top:1px solid #000;margin-bottom:6px}
+.info{width:100%;border-collapse:collapse;margin-bottom:6px;border:1px solid #000}
+.info td{padding:3px 7px;font-size:11px;vertical-align:top}
+.info .lbl{font-weight:bold;white-space:nowrap}
+.info .bdl{border-left:1px solid #000}
+.inv{width:100%;border-collapse:collapse;table-layout:fixed}
+.inv th{border:1px solid #000;padding:5px 4px;text-align:center;font-size:11px;font-weight:bold}
+.inv td{border:1px solid #000;padding:4px 5px;font-size:11px;vertical-align:middle}
+.c{text-align:center}.r{text-align:right}.l{text-align:left;padding-left:6px}
+.trow td{border:1px solid #000;padding:3px 6px;font-size:11px}
+.tgrand td{border:1px solid #000;padding:4px 6px;font-size:12px;font-weight:bold;background:#f0f0f0}
+.tot-left{text-align:left;font-size:11px;color:#000;line-height:1.5;background:#fff;border-top:1px solid #000 !important;border-left:1px solid #000 !important;border-right:1px solid #000 !important;border-bottom:1px solid #000 !important}
+.remarks{margin-top:8px;font-size:11px}
+.sig{width:100%;border-collapse:collapse;margin-top:40px}
+.sig td{width:25%;text-align:center;padding:0 8px;vertical-align:bottom}
+.sig-name{font-size:11px;font-weight:bold;min-height:20px}
+.sig-line{border-top:1px solid #000;margin:2px 0 3px}
+.sig-label{font-size:10px;color:#444}
+.ptime{margin-top:10px;font-size:10px;color:#555}
+@media print{
+  body{margin:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .wrap{padding:7mm 10mm 5mm;width:100%}
+  thead{display:table-header-group}
+  tr{page-break-inside:avoid}
+  .keep{page-break-inside:avoid}
+}
+</style>
+</head><body>
+<div class="wrap">
+<div class="co-name">${company.name} [${company.fy || getFiscalYear()}]</div>
+<div class="co-sub">Phone : ${company.phone}&nbsp;&nbsp;&nbsp;&nbsp;PAN NO : ${company.pan}</div>
+<div class="hr1"></div><div class="hr2"></div>
+<table class="info"><tr>
+  <td style="width:50%">
+    <table style="width:100%;border-collapse:collapse">
+      <tr><td class="lbl">Customer&nbsp;</td><td>: ${client.name || "—"}</td></tr>
+      ${client.company ? `<tr><td class="lbl">Company&nbsp;</td><td>: ${client.company}</td></tr>` : ""}
+      <tr><td class="lbl">Address&nbsp;</td><td>: ${client.address || "—"}</td></tr>
+      <tr><td class="lbl">Contact No&nbsp;</td><td>: ${client.phone || "—"}</td></tr>
+      <tr><td class="lbl">VAT/PAN No&nbsp;</td><td>: ${client.gstin || "—"}</td></tr>
+      <tr><td class="lbl">Payment&nbsp;</td><td>: ${client.payment || "Cash/Credit"}</td></tr>
+    </table>
+  </td>
+  <td class="bdl" style="width:50%">
+    <table style="width:100%;border-collapse:collapse">
+      <tr><td class="lbl">Invoice No&nbsp;</td><td>: ${invoiceNo}</td></tr>
+      <tr><td class="lbl">Date &amp; Time&nbsp;</td><td>: ${invoiceDate} ${timeStr}</td></tr>
+      <tr><td class="lbl">Miti&nbsp;</td><td>: ${dueDate || ""}</td></tr>
+      <tr><td class="lbl">Order No &amp; Dt&nbsp;</td><td>:</td></tr>
+      <tr><td class="lbl">Transport&nbsp;</td><td>:</td></tr>
+    </table>
+  </td>
+</tr></table>
+<table class="inv">
+  <thead><tr>
+    <th style="width:4%">SNo</th>
+    <th style="width:9%">HS Code</th>
+    <th style="width:42%">Product</th>
+    <th style="width:8%">Qty</th>
+    <th style="width:6%">Uom</th>
+    <th style="width:15%">Rate</th>
+    <th style="width:16%">Net Amount</th>
+  </tr></thead>
+  <tbody>
+    ${rows}
+    ${fillerRows}
+    ${totalsBlock}
+  </tbody>
+</table>
+<div class="remarks keep">Remarks : ${notes || ""}</div>
+<table class="sig keep"><tr>
+  <td><div class="sig-name"></div><div class="sig-line"></div><div class="sig-label">Received By</div></td>
+  <td><div class="sig-name">admin</div><div class="sig-line"></div><div class="sig-label">Prepared</div></td>
+  <td><div class="sig-name">admin</div><div class="sig-line"></div><div class="sig-label">Printed By</div></td>
+  <td><div class="sig-name"></div><div class="sig-line"></div><div class="sig-label">Authorize By.</div></td>
+</tr></table>
+<div class="ptime keep">Printed Date &amp; Time : ${printTime}</div>
+</div></body></html>`);
+    w.document.close();
+    w.focus();
+    setTimeout(() => { w.print(); w.close(); }, 700);
+  };
 
   /* ══ RENDER ══ */
   return (
     <div style={s.page}>
 
       {/* Top bar */}
-      <div className="invoice-top-bar" style={s.topBar}>
+      <div style={s.topBar}>
         <div style={{display:"flex",alignItems:"center",gap:12}}>
           <button style={s.backBtn} onClick={() => navigate("/admin/invoices")}>← Back</button>
           <div>
@@ -356,82 +367,82 @@ export default function AdminInvoice() {
             <p style={s.pageSub}>#{invoiceNo}</p>
           </div>
         </div>
-        <div className="invoice-top-actions" style={s.topActions}>
+        <div style={s.topActions}>
           <select style={s.docSel} value={docType} onChange={e=>setDocType(e.target.value)}>
-            {["Estimate","Invoice","Proforma Invoice","Quotation"].map(o=><option key={o}>{o}</option>)}
+            {["Invoice","Estimate","Proforma Invoice","Quotation"].map(o=><option key={o}>{o}</option>)}
           </select>
-          <button style={{...s.btn,...s.btnGhost}} onClick={handlePrint}>🖨 Print</button>
+          <button style={{...s.btn,...s.btnGhost}} onClick={handlePrint}>🖨 Print / PDF</button>
           <button style={{...s.btn,...s.btnSave}} onClick={handleSave} disabled={saving}>
             {saving?"Saving…":"💾 Save"}
           </button>
-          <button style={{...s.btn,...s.btnPrimary}} onClick={handlePrint}>⬇ PDF</button>
         </div>
       </div>
 
-      <div className="invoice-layout" style={s.layout}>
-
-        {/* ═══ LEFT EDITOR ═══ */}
+      <div style={s.layout}>
         <div style={s.editor}>
 
           {/* Company */}
           <Card title="Your Company">
             {editCompany ? (
-              <div className="invoice-fgrid" style={s.fGrid}>
-                {Object.entries(company).map(([k,v])=>(
-                  <div key={k} style={k==="address"?{gridColumn:"1/-1"}:{}}>
-                    <label style={s.lbl}>{k==="billNo"?"Bill No":k==="gstin"?"VAT/PAN":k.charAt(0).toUpperCase()+k.slice(1)}</label>
-                    <input style={s.inp} value={v}
+              <div style={s.fGrid}>
+                {[["name","Company Name"],["pan","PAN Number"],["phone","Phone"],["email","Email"],["address","Address"],["city","City"],["fy","Fiscal Year"]].map(([k,lbl])=>(
+                  <div key={k} style={k==="name"||k==="address"?{gridColumn:"1/-1"}:{}}>
+                    <label style={s.lbl}>{lbl}</label>
+                    <input style={s.inp} value={company[k]||""}
                       onChange={e=>setCompany(p=>({...p,[k]:e.target.value}))} />
                   </div>
                 ))}
                 <button style={{...s.btn,...s.btnPrimary,gridColumn:"1/-1"}}
-                  onClick={()=>setEditCompany(false)}>Save</button>
+                  onClick={()=>setEditCompany(false)}>✓ Done</button>
               </div>
-            ):(
+            ) : (
               <div>
-                <strong style={{fontSize:15,fontWeight:700,color:"#0f172a"}}>{company.name}</strong>
-                <div style={s.infoLine}>{company.address}, {company.city}</div>
+                <div style={{fontWeight:700,fontSize:14,color:"#0f172a"}}>{company.name}</div>
+                <div style={s.infoLine}>PAN: {company.pan} · FY: {company.fy}</div>
                 <div style={s.infoLine}>📞 {company.phone} · ✉ {company.email}</div>
-                <div style={s.infoLine}>VAT/PAN: {company.gstin}</div>
-                {company.billNo && <div style={s.infoLine}>Bill No: {company.billNo}</div>}
-                <button style={{...s.btn,...s.btnGhost,marginTop:8}}
-                  onClick={()=>setEditCompany(true)}>✏️ Edit</button>
+                <div style={s.infoLine}>{company.address}, {company.city}</div>
+                <button style={{...s.btn,...s.btnGhost,marginTop:8}} onClick={()=>setEditCompany(true)}>✏️ Edit</button>
               </div>
             )}
           </Card>
 
           {/* Client */}
           <Card title="Bill To (Client)">
-            <div className="invoice-fgrid" style={s.fGrid}>
-              {[["name","Client Name",true],["company","Company",true],["phone","Phone"],["email","Email"],["address","Address",true],["gstin","VAT/PAN"]].map(([k,lbl,req])=>(
+            <div style={s.fGrid}>
+              {[["name","Client Name",true],["company","Company / Firm (optional)"],["phone","Phone"],["email","Email"],["address","Address"],["gstin","VAT/PAN No"],["payment","Payment Method"]].map(([k,lbl,req])=>(
                 <div key={k} style={k==="address"?{gridColumn:"1/-1"}:{}}>
-                  <label style={s.lbl}>{lbl}{req && <span style={s.req}> *</span>}</label>
-                  <input style={s.inp} value={client[k]} placeholder={lbl}
-                    onChange={e=>setClient(p=>({...p,[k]:e.target.value}))} />
+                  <label style={s.lbl}>{lbl}{req&&<span style={{color:"#ef4444"}}> *</span>}</label>
+                  {k==="payment"
+                    ? <select style={s.inp} value={client[k]||"Cash/Credit"} onChange={e=>setClient(p=>({...p,[k]:e.target.value}))}>
+                        {["Cash/Credit","Cash","Credit","Cheque","Online Transfer"].map(o=><option key={o}>{o}</option>)}
+                      </select>
+                    : <input style={s.inp} placeholder={lbl} value={client[k]||""}
+                        onChange={e=>setClient(p=>({...p,[k]:e.target.value}))} />
+                  }
                 </div>
               ))}
             </div>
           </Card>
 
-          {/* Doc details */}
+          {/* Document Details */}
           <Card title="Document Details">
-            <div className="invoice-fgrid" style={s.fGrid}>
+            <div style={s.fGrid}>
               <div>
-                <label style={s.lbl}>Document No.</label>
+                <label style={s.lbl}>Invoice No.</label>
                 <input style={{...s.inp,background:"#f8fafc",color:"#94a3b8"}} value={invoiceNo} readOnly />
               </div>
               <div>
-                <label style={s.lbl}>Date<span style={s.req}> *</span></label>
+                <label style={s.lbl}>Date</label>
                 <input type="date" style={s.inp} value={invoiceDate} onChange={e=>setInvoiceDate(e.target.value)} />
               </div>
               <div>
-                <label style={s.lbl}>Valid / Due Until</label>
-                <input type="date" style={s.inp} value={dueDate} onChange={e=>setDueDate(e.target.value)} />
+                <label style={s.lbl}>Miti (BS Date)</label>
+                <input style={s.inp} placeholder="e.g. 10/10/2082" value={dueDate} onChange={e=>setDueDate(e.target.value)} />
               </div>
               <div>
-                <label style={s.lbl}>Type<span style={s.req}> *</span></label>
+                <label style={s.lbl}>Type</label>
                 <select style={s.inp} value={docType} onChange={e=>setDocType(e.target.value)}>
-                  {["Estimate","Invoice","Proforma Invoice","Quotation"].map(o=><option key={o}>{o}</option>)}
+                  {["Invoice","Estimate","Proforma Invoice","Quotation"].map(o=><option key={o}>{o}</option>)}
                 </select>
               </div>
             </div>
@@ -439,21 +450,16 @@ export default function AdminInvoice() {
 
           {/* Products */}
           <Card title="Products / Services">
-
-            {/* Search — fetches from Firebase */}
             <div style={s.searchWrap}>
-              <div style={s.searchRow}>
-                <input
-                  style={{...s.inp,marginBottom:0,flex:1}}
-                  placeholder={products.length===0 ? "⏳ Loading products from database…" : `🔍 Search ${products.length} products from catalogue…`}
-                  value={search}
-                  onChange={e=>{setSearch(e.target.value);setShowDrop(true);}}
-                  onFocus={()=>setShowDrop(true)}
-                  onBlur={()=>setShowDrop(false)}
-                  disabled={products.length===0}
-                />
-              </div>
-
+              <input
+                style={{...s.inp,marginBottom:0}}
+                placeholder={products.length===0?"⏳ Loading products…":`🔍 Search ${products.length} products…`}
+                value={search}
+                onChange={e=>{setSearch(e.target.value);setShowDrop(true);}}
+                onFocus={()=>setShowDrop(true)}
+                onBlur={()=>setTimeout(()=>setShowDrop(false),150)}
+                disabled={products.length===0}
+              />
               {showDrop && (
                 <div style={s.drop} onMouseDown={e=>e.preventDefault()}>
                   {filtered.length===0
@@ -467,11 +473,11 @@ export default function AdminInvoice() {
                           }
                           <div>
                             <div style={s.dropName}>{p.name}</div>
-                            <div style={s.dropMeta}>{p.category||""} {p.unit?"· per "+p.unit:""}</div>
+                            <div style={s.dropMeta}>{p.category||""}{p.unit?" · "+p.unit:""}</div>
                           </div>
                         </div>
                         <div style={{display:"flex",alignItems:"center",gap:8}}>
-                          <span style={s.dropPrice}>{p.price?fmt(Number(p.price)):"On request"}</span>
+                          <span style={s.dropPrice}>{p.price?"Rs "+fmt(Number(p.price)):"On request"}</span>
                           <span style={s.addTag}>+ Add</span>
                         </div>
                       </div>
@@ -482,44 +488,47 @@ export default function AdminInvoice() {
               )}
             </div>
 
-            {/* Line items */}
             {items.length > 0 && (
               <div style={s.tableWrap}>
                 <table style={s.table}>
                   <thead><tr style={s.thead}>
+                    <th style={s.th}>HS Code</th>
                     <th style={{...s.th,width:"35%"}}>Product</th>
-                    <th style={{...s.th,width:"10%"}}>Unit</th>
-                    <th style={{...s.th,width:"18%"}}>Qty</th>
-                    <th style={{...s.th,width:"18%"}}>Rate (Rs)</th>
-                    <th style={{...s.th,width:"14%",textAlign:"right"}}>Amount</th>
-                    <th style={{...s.th,width:"5%"}}></th>
+                    <th style={s.th}>Unit</th>
+                    <th style={s.th}>Qty</th>
+                    <th style={s.th}>Rate (Rs)</th>
+                    <th style={{...s.th,textAlign:"right"}}>Amount</th>
+                    <th style={s.th}></th>
                   </tr></thead>
                   <tbody>
                     {items.map((item,idx)=>(
                       <tr key={item.id} style={idx%2===0?s.trEven:s.trOdd}>
                         <td style={s.td}>
+                          <input style={{...s.cellInp,width:72}} value={item.hsCode||""}
+                            onChange={e=>updateItem(item.id,"hsCode",e.target.value)} placeholder="—" />
+                        </td>
+                        <td style={s.td}>
                           <input style={s.cellInp} value={item.name}
                             onChange={e=>updateItem(item.id,"name",e.target.value)} />
                         </td>
                         <td style={s.td}>
-                          <input style={{...s.cellInp,width:48}} value={item.unit}
+                          <input style={{...s.cellInp,width:44}} value={item.unit}
                             onChange={e=>updateItem(item.id,"unit",e.target.value)} />
                         </td>
                         <td style={s.td}>
                           <div style={s.stepper}>
                             <button style={s.stepBtn} onClick={()=>changeQty(item.id,-1)}>−</button>
-                            <input type="number" min="1"
-                              style={{...s.cellInp,width:38,textAlign:"center",fontWeight:700}}
+                            <input type="number" min="1" style={{...s.cellInp,width:36,textAlign:"center",fontWeight:700}}
                               value={item.qty} onChange={e=>updateItem(item.id,"qty",e.target.value)} />
                             <button style={s.stepBtn} onClick={()=>changeQty(item.id,+1)}>+</button>
                           </div>
                         </td>
                         <td style={s.td}>
-                          <input type="number" min="0" style={{...s.cellInp,width:90}}
+                          <input type="number" min="0" style={{...s.cellInp,width:88}}
                             value={item.rate} onChange={e=>updateItem(item.id,"rate",e.target.value)} />
                         </td>
                         <td style={{...s.td,textAlign:"right",fontWeight:700,color:"#0f172a"}}>
-                          {fmt(item.qty*item.rate)}
+                          Rs {fmt(item.qty*item.rate)}
                         </td>
                         <td style={s.td}>
                           <button style={s.remBtn} onClick={()=>removeItem(item.id)}>✕</button>
@@ -532,100 +541,91 @@ export default function AdminInvoice() {
             )}
 
             {items.length===0 && (
-              <div style={s.emptyItems}>
-                Search above to add products from your Firebase catalogue
-              </div>
+              <div style={s.emptyItems}>Search above to add products</div>
             )}
 
             <button style={{...s.btn,...s.btnGhost,marginTop:10}}
-              onClick={()=>setItems(p=>[...p,{id:Date.now()+Math.random(),productId:null,name:"Custom Item",unit:"Nos",qty:1,rate:0}])}>
+              onClick={()=>setItems(p=>[...p,{id:Date.now()+Math.random(),productId:null,hsCode:"",name:"Custom Item",unit:"NOS",qty:1,rate:0}])}>
               + Add Custom Line
             </button>
           </Card>
 
-          {/* Tax & discount */}
-          <Card title="Pricing & Tax">
-            <div className="invoice-fgrid" style={s.fGrid}>
+          {/* Tax */}
+          <Card title="Tax & Discount">
+            <div style={s.fGrid}>
               <div>
                 <label style={s.lbl}>Discount (%)</label>
                 <input type="number" min="0" max="100" style={s.inp} value={discountPct}
                   onChange={e=>setDiscountPct(Number(e.target.value))} />
               </div>
               <div style={{display:"flex",alignItems:"center",gap:10,paddingTop:20}}>
-                <input type="checkbox" id="gst" checked={taxEnabled}
+                <input type="checkbox" id="vat" checked={taxEnabled}
                   onChange={e=>setTaxEnabled(e.target.checked)} style={{width:18,height:18,cursor:"pointer"}} />
-                <label htmlFor="gst" style={{...s.lbl,marginBottom:0,cursor:"pointer"}}>Apply 13% VAT</label>
+                <label htmlFor="vat" style={{...s.lbl,marginBottom:0,cursor:"pointer"}}>Apply 13% VAT</label>
               </div>
             </div>
           </Card>
 
           {/* Notes */}
-          <Card title="Notes & Terms">
-            <label style={s.lbl}>Notes</label>
-            <textarea style={{...s.inp,height:72,resize:"vertical"}} value={notes}
+          <Card title="Remarks">
+            <label style={s.lbl}>Remarks (printed on invoice)</label>
+            <textarea style={{...s.inp,height:64,resize:"vertical"}} value={notes}
               onChange={e=>setNotes(e.target.value)} />
-            <label style={{...s.lbl,marginTop:8}}>Terms & Conditions</label>
-            <textarea style={{...s.inp,height:72,resize:"vertical"}} value={terms}
-              onChange={e=>setTerms(e.target.value)} />
           </Card>
         </div>
 
         {/* ═══ RIGHT PREVIEW ═══ */}
-        <div className="invoice-preview" style={s.previewCol}>
+        <div style={s.previewCol}>
           <div style={s.previewLabel}>LIVE PREVIEW</div>
+          <div ref={printRef} style={s.doc}>
 
-          <div ref={printRef} className="invoice-doc" style={s.doc}>
             {/* Header */}
-            <div className="invoice-doc-header" style={s.docHeader}>
-              <div>
-                <div style={s.docCompany}>{company.name}</div>
-                <div style={s.docSmall}>{company.address}, {company.city}</div>
-                <div style={s.docSmall}>📞 {company.phone} · ✉ {company.email}</div>
-                {company.gstin&&<div style={s.docSmall}>VAT/PAN: {company.gstin}</div>}
-                {company.billNo&&<div style={s.docSmall}>Bill No: {company.billNo}</div>}
+            <div style={{textAlign:"center",marginBottom:4}}>
+              <div style={{fontSize:15,fontWeight:900,textTransform:"uppercase",letterSpacing:0.5}}>{company.name} [{company.fy}]</div>
+              <div style={{fontSize:10,color:"#444",marginTop:2}}>Phone : {company.phone} &nbsp;&nbsp; PAN NO : {company.pan}</div>
+            </div>
+            <div style={{borderTop:"2px solid #000",margin:"6px 0"}} />
+
+            {/* Info grid */}
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",border:"1px solid #000",marginBottom:6,fontSize:10}}>
+              <div style={{padding:"6px 8px",borderRight:"1px solid #000"}}>
+                <div><b>Customer :</b> {client.name||"—"}</div>
+                {client.company&&<div><b>Company :</b> {client.company}</div>}
+                <div><b>Address :</b> {client.address||"—"}</div>
+                <div><b>Contact No :</b> {client.phone||"—"}</div>
+                <div><b>VAT/PAN No :</b> {client.gstin||"—"}</div>
+                <div><b>Payment :</b> {client.payment||"Cash/Credit"}</div>
               </div>
-              <div className="invoice-doc-type" style={{textAlign:"right"}}>
-                <div style={s.docType}>{docType.toUpperCase()}</div>
-                <div style={s.docSmall}><b>No:</b> {invoiceNo}</div>
-                <div style={s.docSmall}><b>Date:</b> {invoiceDate}</div>
-                {dueDate&&<div style={s.docSmall}><b>Valid Until:</b> {dueDate}</div>}
+              <div style={{padding:"6px 8px"}}>
+                <div><b>Invoice No :</b> {invoiceNo}</div>
+                <div><b>Date &amp; Time :</b> {invoiceDate}</div>
+                <div><b>Miti :</b> {dueDate||"—"}</div>
+                <div><b>Order No &amp; Dt :</b></div>
+                <div><b>Transport :</b></div>
               </div>
             </div>
 
-            <div style={s.docRule} />
-
-            <div style={s.docBillBox}>
-              <div style={s.docSectionTitle}>BILL TO</div>
-              <div style={s.docClientName}>{client.name||"—"}</div>
-              {client.company&&<div style={s.docSmall}>{client.company}</div>}
-              {client.address&&<div style={s.docSmall}>{client.address}</div>}
-              {client.phone&&<div style={s.docSmall}>📞 {client.phone}</div>}
-              {client.email&&<div style={s.docSmall}>✉ {client.email}</div>}
-              {client.gstin&&<div style={s.docSmall}>VAT/PAN: {client.gstin}</div>}
-            </div>
-
-            <table style={s.docTable}>
+            {/* Items table */}
+            <table style={{width:"100%",borderCollapse:"collapse",fontSize:10,marginBottom:0}}>
               <thead>
-                <tr>
-                  <th style={{...s.docTh,width:"5%"}}>#</th>
-                  <th style={{...s.docTh,width:"42%"}}>Description</th>
-                  <th style={{...s.docTh,width:"8%"}}>Unit</th>
-                  <th style={{...s.docTh,width:"10%",textAlign:"center"}}>Qty</th>
-                  <th style={{...s.docTh,width:"17%",textAlign:"right"}}>Rate</th>
-                  <th style={{...s.docTh,width:"18%",textAlign:"right"}}>Amount</th>
+                <tr style={{background:"#f8fafc"}}>
+                  {["SNo","HS Code","Product","Quantity","Uom","Rate","Net Amount"].map(h=>(
+                    <th key={h} style={{border:"1px solid #000",padding:"4px 5px",textAlign:h==="Product"?"left":"center",fontSize:9,fontWeight:700}}>{h}</th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
                 {items.length===0
-                  ? <tr><td colSpan={6} style={{...s.docTd,textAlign:"center",color:"#94a3b8",padding:"20px 0"}}>No items yet</td></tr>
+                  ? <tr><td colSpan={7} style={{border:"1px solid #000",padding:"16px",textAlign:"center",color:"#94a3b8"}}>No items yet</td></tr>
                   : items.map((item,idx)=>(
-                    <tr key={item.id} style={{background:idx%2===0?"#f8fafc":"#fff"}}>
-                      <td style={{...s.docTd,color:"#94a3b8"}}>{idx+1}</td>
-                      <td style={s.docTd}><b>{item.name}</b></td>
-                      <td style={{...s.docTd,color:"#64748b"}}>{item.unit}</td>
-                      <td style={{...s.docTd,textAlign:"center"}}>{item.qty}</td>
-                      <td style={{...s.docTd,textAlign:"right"}}>{fmt(item.rate)}</td>
-                      <td style={{...s.docTd,textAlign:"right",fontWeight:700}}>{fmt(item.qty*item.rate)}</td>
+                    <tr key={item.id}>
+                      <td style={{border:"1px solid #000",padding:"3px 5px",textAlign:"center"}}>{idx+1}</td>
+                      <td style={{border:"1px solid #000",padding:"3px 5px",textAlign:"center"}}>{item.hsCode||""}</td>
+                      <td style={{border:"1px solid #000",padding:"3px 5px"}}><b>{item.name}</b></td>
+                      <td style={{border:"1px solid #000",padding:"3px 5px",textAlign:"center"}}>{fmt(item.qty)}</td>
+                      <td style={{border:"1px solid #000",padding:"3px 5px",textAlign:"center"}}>{item.unit}</td>
+                      <td style={{border:"1px solid #000",padding:"3px 5px",textAlign:"right"}}>{fmt(item.rate)}</td>
+                      <td style={{border:"1px solid #000",padding:"3px 5px",textAlign:"right",fontWeight:700}}>{fmt(item.qty*item.rate)}</td>
                     </tr>
                   ))
                 }
@@ -633,34 +633,48 @@ export default function AdminInvoice() {
             </table>
 
             {/* Totals */}
-            <div style={s.docTotals}>
-              <TRow l="Subtotal"             v={fmt(subtotal)} />
-              {discountPct>0&&<TRow l={`Discount (${discountPct}%)`} v={`− ${fmt(discount)}`} color="#ef4444" />}
-              {taxEnabled&&<TRow l="VAT (13%)" v={fmt(tax)} />}
-              <div style={s.docTotalRule} />
-              <TRow l="TOTAL" v={fmt(total)} bold accent />
+            <div style={{display:"grid",gridTemplateColumns:"1fr auto",border:"1px solid #000",borderTop:"none",fontSize:10}}>
+              <div style={{padding:"6px 8px",borderRight:"1px solid #000"}}>
+                <div style={{fontWeight:700,fontSize:9}}>In Words :</div>
+                <div style={{marginTop:3}}>{numberToWords(total)}</div>
+              </div>
+              <div style={{minWidth:200}}>
+                {[["Sub Total", fmt(subtotal)],
+                  ...(discountPct>0?[[`Discount (${discountPct}%)`, fmt(discount)]]:[]),
+                  ["Taxable Value", fmt(taxable)],
+                  ...(taxEnabled?[["13% VAT", fmt(tax)]]:[]),
+                  ["Total Amount", fmt(total)]
+                ].map(([l,v],i,arr)=>(
+                  <div key={l} style={{display:"flex",justifyContent:"space-between",padding:"3px 8px",borderBottom:i<arr.length-1?"1px solid #000":"none",fontWeight:l==="Total Amount"?700:400}}>
+                    <span>{l}</span><span>: {v}</span>
+                  </div>
+                ))}
+              </div>
             </div>
 
-            {notes&&(
-              <div style={s.docNotes}>
-                <div style={s.docSectionTitle}>NOTES</div>
-                <p style={{fontSize:11,color:"#475569",lineHeight:1.6,whiteSpace:"pre-line",margin:0}}>{notes}</p>
-              </div>
-            )}
-            {terms&&(
-              <div style={s.docNotes}>
-                <div style={s.docSectionTitle}>TERMS & CONDITIONS</div>
-                <p style={{fontSize:11,color:"#64748b",lineHeight:1.6,whiteSpace:"pre-line",margin:0}}>{terms}</p>
-              </div>
-            )}
-            <div style={s.docFooter}>Computer-generated {docType.toLowerCase()} — no signature required.</div>
+            {/* Remarks */}
+            {notes && <div style={{fontSize:10,marginTop:6}}>Remarks : {notes}</div>}
+
+            {/* Signatures */}
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",marginTop:28,gap:0}}>
+              {[["","Received By"],["admin","Prepared"],["admin","Printed By"],["","Authorize By."]].map(([name,role])=>(
+                <div key={role} style={{textAlign:"center",padding:"0 4px"}}>
+                  <div style={{fontSize:10,fontWeight:700,height:16}}>{name}</div>
+                  <div style={{borderTop:"1px solid #000",marginBottom:3}}/>
+                  <div style={{fontSize:9,color:"#555"}}>{role}</div>
+                </div>
+              ))}
+            </div>
+
+            <div style={{fontSize:9,color:"#888",marginTop:10}}>
+              Printed Date & Time : {new Date().toLocaleDateString("en-IN")} {new Date().toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit",hour12:true})}
+            </div>
           </div>
 
-          <div style={{display:"flex",gap:10,marginTop:14}}>
-            <button style={{...s.btn,...s.btnGhost,flex:1}} onClick={handlePrint}>🖨 Print</button>
-            <button style={{...s.btn,...s.btnPrimary,flex:1}} onClick={handlePrint}>⬇ PDF</button>
-          </div>
-          <button style={{...s.btn,...s.btnSave,width:"100%",marginTop:10}} onClick={handleSave} disabled={saving}>
+          <button style={{...s.btn,...s.btnPrint,width:"100%",marginTop:12}} onClick={handlePrint}>
+            🖨 Print / Save as PDF
+          </button>
+          <button style={{...s.btn,...s.btnSave,width:"100%",marginTop:8}} onClick={handleSave} disabled={saving}>
             {saving?"Saving…":"💾 Save to Firebase"}
           </button>
         </div>
@@ -671,85 +685,56 @@ export default function AdminInvoice() {
 
 function Card({ title, children }) {
   return (
-    <div style={{ background:"#fff", borderRadius:14, padding:"20px 22px", boxShadow:"0 1px 4px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.04)" }}>
-      <h3 style={{ fontSize:11, fontWeight:700, letterSpacing:1.2, color:"#ea580c", textTransform:"uppercase", margin:"0 0 14px" }}>{title}</h3>
+    <div style={{background:"#fff",borderRadius:12,padding:"18px 20px",boxShadow:"0 1px 4px rgba(0,0,0,0.06)"}}>
+      <h3 style={{fontSize:11,fontWeight:700,letterSpacing:1.2,color:"#0369a1",textTransform:"uppercase",margin:"0 0 12px"}}>{title}</h3>
       {children}
     </div>
   );
 }
 
-function TRow({ l, v, bold, accent, color }) {
-  return (
-    <div style={{ display:"flex", justifyContent:"space-between", width:230, fontSize: bold?15:13, fontWeight: bold?800:400, padding:"3px 0" }}>
-      <span style={{ color: accent?"#ea580c":"#64748b" }}>{l}</span>
-      <span style={{ color: color||(accent?"#ea580c":"#0f172a") }}>{v}</span>
-    </div>
-  );
-}
-
 const s = {
-  page: { fontFamily:"'Inter','Segoe UI',system-ui,sans-serif", background:"#f1f5f9", minHeight:"100vh", padding:"28px 20px" },
-  topBar: { display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:24, flexWrap:"wrap", gap:12 },
-  backBtn: { background:"#fff7ed", border:"1.5px solid #fed7aa", borderRadius:8, padding:"8px 14px", fontSize:13, fontWeight:600, cursor:"pointer", color:"#ea580c" },
-  pageTitle: { fontSize:24, fontWeight:800, color:"#0f172a", margin:0 },
-  pageSub: { fontSize:12, color:"#64748b", margin:"2px 0 0" },
+  page:       { fontFamily:"'Segoe UI',sans-serif", background:"#f1f5f9", minHeight:"100vh", padding:"24px 16px" },
+  topBar:     { display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:20, flexWrap:"wrap", gap:12 },
+  backBtn:    { background:"#e0f2fe", border:"1.5px solid #bae6fd", borderRadius:8, padding:"8px 14px", fontSize:13, fontWeight:600, cursor:"pointer", color:"#0369a1" },
+  pageTitle:  { fontSize:22, fontWeight:800, color:"#0f172a", margin:0 },
+  pageSub:    { fontSize:12, color:"#64748b", margin:"2px 0 0" },
   topActions: { display:"flex", gap:10, flexWrap:"wrap", alignItems:"center" },
-  docSel: { padding:"9px 12px", borderRadius:8, border:"1.5px solid #e2e8f0", fontSize:13, fontWeight:600, background:"#fff", color:"#0f172a", cursor:"pointer" },
-  layout: { display:"grid", gridTemplateColumns:"1fr 460px", gap:24, alignItems:"start", maxWidth:1300, margin:"0 auto" },
-  editor: { display:"flex", flexDirection:"column", gap:16 },
-  fGrid: { display:"grid", gridTemplateColumns:"1fr 1fr", gap:"0 16px" },
-  lbl: { display:"block", fontSize:12, fontWeight:600, color:"#374151", marginBottom:5 },
-  req: { color:"#ef4444", fontWeight:700 },
-  inp: { width:"100%", padding:"9px 12px", borderRadius:8, border:"1.5px solid #e2e8f0", fontSize:13, color:"#0f172a", marginBottom:12, boxSizing:"border-box", outline:"none" },
-  infoLine: { fontSize:12, color:"#64748b", marginTop:2 },
-  /* Search */
-  searchWrap: { position:"relative", marginBottom:12 },
-  searchRow: { display:"flex", gap:10 },
-  drop: { position:"absolute", top:"100%", left:0, right:0, zIndex:50, background:"#fff", borderRadius:10, border:"1.5px solid #e2e8f0", boxShadow:"0 8px 28px rgba(0,0,0,0.12)", maxHeight:300, overflowY:"auto" },
-  dropItem: { display:"flex", justifyContent:"space-between", alignItems:"center", padding:"10px 14px", cursor:"pointer", borderBottom:"1px solid #f1f5f9" },
-  dropImg: { width:36, height:36, borderRadius:6, objectFit:"cover", flexShrink:0 },
-  dropImgPlaceholder: { width:36, height:36, background:"#fff7ed", borderRadius:6, display:"flex", alignItems:"center", justifyContent:"center", fontSize:16 },
-  dropName: { fontSize:13, fontWeight:600, color:"#0f172a" },
-  dropMeta: { fontSize:11, color:"#94a3b8", marginTop:1 },
-  dropPrice: { fontSize:13, fontWeight:700, color:"#ea580c" },
-  addTag: { background:"#ea580c", color:"#fff", fontSize:11, fontWeight:700, padding:"2px 8px", borderRadius:5 },
-  dropEmpty: { padding:16, textAlign:"center", color:"#94a3b8", fontSize:13 },
-  dropClose: { padding:"8px 14px", textAlign:"center", fontSize:12, color:"#94a3b8", borderTop:"1px solid #f1f5f9", cursor:"pointer", background:"#fafafa" },
-  /* Table */
-  tableWrap: { overflowX:"auto", borderRadius:10, border:"1px solid #e2e8f0", marginBottom:6 },
-  table: { width:"100%", borderCollapse:"collapse" },
-  thead: { background:"#fafaf9" },
-  th: { padding:"9px 10px", fontSize:10, fontWeight:700, color:"#94a3b8", textTransform:"uppercase", letterSpacing:0.8, borderBottom:"1px solid #e2e8f0" },
-  td: { padding:"8px 10px", fontSize:12, borderBottom:"1px solid #f8fafc" },
-  trEven: { background:"#f8fafc" },
-  trOdd:  { background:"#fff" },
-  cellInp: { border:"1px solid transparent", borderRadius:5, padding:"3px 5px", fontSize:12, width:"100%", background:"transparent", outline:"none", color:"#0f172a" },
-  stepper: { display:"flex", alignItems:"center", gap:4 },
-  stepBtn: { width:24, height:24, borderRadius:5, border:"1.5px solid #fed7aa", background:"#fff7ed", cursor:"pointer", fontSize:14, fontWeight:700, color:"#ea580c", display:"flex", alignItems:"center", justifyContent:"center" },
-  remBtn: { background:"#fee2e2", color:"#dc2626", border:"none", borderRadius:5, width:24, height:24, cursor:"pointer", fontSize:11, fontWeight:700 },
-  emptyItems: { textAlign:"center", padding:"20px 0", color:"#94a3b8", fontSize:13, border:"2px dashed #fed7aa", borderRadius:8, marginTop:6 },
-  /* Buttons */
-  btn: { padding:"9px 16px", borderRadius:8, border:"none", fontSize:13, fontWeight:700, cursor:"pointer" },
-  btnPrimary: { background:"linear-gradient(135deg,#ea580c,#f97316)", color:"#fff", boxShadow:"0 2px 8px rgba(234,88,12,0.2)" },
-  btnGhost: { background:"#f1f5f9", color:"#475569" },
-  btnSave: { background:"#10b981", color:"#fff" },
-  /* Preview */
-  previewCol: { position:"sticky", top:24 },
-  previewLabel: { fontSize:10, fontWeight:700, letterSpacing:1.5, color:"#94a3b8", textTransform:"uppercase", marginBottom:8 },
-  doc: { background:"#fff", borderRadius:14, padding:"28px 24px", boxShadow:"0 4px 20px rgba(0,0,0,0.09)", fontSize:12, color:"#1e293b", maxHeight:"calc(100vh - 200px)", overflowY:"auto" },
-  docHeader: { display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:18 },
-  docCompany: { fontSize:18, fontWeight:800, color:"#0f172a", marginBottom:3 },
-  docSmall: { fontSize:10, color:"#64748b", lineHeight:1.7 },
-  docType: { fontSize:22, fontWeight:900, color:"#ea580c", letterSpacing:1 },
-  docRule: { height:2, background:"linear-gradient(90deg,#ea580c,#f97316 60%,transparent)", marginBottom:14, borderRadius:2 },
-  docBillBox: { background:"#fff7ed", borderRadius:8, padding:"12px 14px", borderLeft:"3px solid #ea580c", marginBottom:16 },
-  docSectionTitle: { fontSize:9, fontWeight:800, letterSpacing:1.5, color:"#94a3b8", textTransform:"uppercase", marginBottom:4 },
-  docClientName: { fontSize:13, fontWeight:700, color:"#0f172a", marginBottom:2 },
-  docTable: { width:"100%", borderCollapse:"collapse", marginBottom:14 },
-  docTh: { background:"#0f172a", color:"#fff", padding:"8px 9px", fontSize:9, fontWeight:700, letterSpacing:0.8, textTransform:"uppercase" },
-  docTd: { padding:"8px 9px", fontSize:11, borderBottom:"1px solid #f1f5f9" },
-  docTotals: { display:"flex", flexDirection:"column", gap:3, alignItems:"flex-end", marginBottom:16 },
-  docTotalRule: { width:230, height:1, background:"#e2e8f0", margin:"4px 0" },
-  docNotes: { marginBottom:12, padding:"10px 12px", background:"#fafaf9", borderRadius:7 },
-  docFooter: { textAlign:"center", fontSize:9, color:"#94a3b8", marginTop:16, paddingTop:10, borderTop:"1px solid #f1f5f9" },
+  docSel:     { padding:"9px 12px", borderRadius:8, border:"1.5px solid #e2e8f0", fontSize:13, fontWeight:600, background:"#fff", color:"#0f172a", cursor:"pointer" },
+  layout:     { display:"grid", gridTemplateColumns:"1fr 420px", gap:20, alignItems:"start", maxWidth:1280, margin:"0 auto" },
+  editor:     { display:"flex", flexDirection:"column", gap:14 },
+  fGrid:      { display:"grid", gridTemplateColumns:"1fr 1fr", gap:"0 14px" },
+  lbl:        { display:"block", fontSize:12, fontWeight:600, color:"#374151", marginBottom:5 },
+  inp:        { width:"100%", padding:"8px 11px", borderRadius:7, border:"1.5px solid #e2e8f0", fontSize:13, color:"#0f172a", marginBottom:12, boxSizing:"border-box", outline:"none" },
+  infoLine:   { fontSize:12, color:"#64748b", marginTop:3 },
+  searchWrap: { position:"relative", marginBottom:10 },
+  drop:       { position:"absolute", top:"100%", left:0, right:0, zIndex:50, background:"#fff", borderRadius:10, border:"1.5px solid #e2e8f0", boxShadow:"0 8px 28px rgba(0,0,0,0.12)", maxHeight:280, overflowY:"auto" },
+  dropItem:   { display:"flex", justifyContent:"space-between", alignItems:"center", padding:"9px 12px", cursor:"pointer", borderBottom:"1px solid #f1f5f9" },
+  dropImg:    { width:34, height:34, borderRadius:6, objectFit:"cover", flexShrink:0 },
+  dropImgPlaceholder: { width:34, height:34, background:"#f0f9ff", borderRadius:6, display:"flex", alignItems:"center", justifyContent:"center", fontSize:16 },
+  dropName:   { fontSize:13, fontWeight:600, color:"#0f172a" },
+  dropMeta:   { fontSize:11, color:"#94a3b8", marginTop:1 },
+  dropPrice:  { fontSize:13, fontWeight:700, color:"#0369a1" },
+  addTag:     { background:"#0369a1", color:"#fff", fontSize:11, fontWeight:700, padding:"2px 8px", borderRadius:5 },
+  dropEmpty:  { padding:14, textAlign:"center", color:"#94a3b8", fontSize:13 },
+  dropClose:  { padding:"7px 12px", textAlign:"center", fontSize:12, color:"#94a3b8", borderTop:"1px solid #f1f5f9", cursor:"pointer" },
+  tableWrap:  { overflowX:"auto", borderRadius:8, border:"1px solid #e2e8f0", marginTop:10, marginBottom:4 },
+  table:      { width:"100%", borderCollapse:"collapse" },
+  thead:      { background:"#f8fafc" },
+  th:         { padding:"8px 8px", fontSize:10, fontWeight:700, color:"#94a3b8", textTransform:"uppercase", letterSpacing:0.6, borderBottom:"1px solid #e2e8f0", textAlign:"center" },
+  td:         { padding:"7px 8px", fontSize:12, borderBottom:"1px solid #f1f5f9", textAlign:"center" },
+  trEven:     { background:"#f8fafc" },
+  trOdd:      { background:"#fff" },
+  cellInp:    { border:"1px solid transparent", borderRadius:4, padding:"3px 4px", fontSize:12, width:"100%", background:"transparent", outline:"none", color:"#0f172a" },
+  stepper:    { display:"flex", alignItems:"center", gap:3, justifyContent:"center" },
+  stepBtn:    { width:22, height:22, borderRadius:4, border:"1px solid #bae6fd", background:"#e0f2fe", cursor:"pointer", fontSize:13, fontWeight:700, color:"#0369a1" },
+  remBtn:     { background:"#fee2e2", color:"#dc2626", border:"none", borderRadius:4, width:22, height:22, cursor:"pointer", fontSize:11, fontWeight:700 },
+  emptyItems: { textAlign:"center", padding:"18px 0", color:"#94a3b8", fontSize:13, border:"2px dashed #bae6fd", borderRadius:8, marginTop:8 },
+  btn:        { padding:"9px 16px", borderRadius:8, border:"none", fontSize:13, fontWeight:700, cursor:"pointer" },
+  btnPrimary: { background:"#0ea5e9", color:"#fff" },
+  btnGhost:   { background:"#f1f5f9", color:"#475569" },
+  btnSave:    { background:"#10b981", color:"#fff" },
+  btnPrint:   { background:"#0369a1", color:"#fff" },
+  previewCol: { position:"sticky", top:20 },
+  previewLabel: { fontSize:10, fontWeight:700, letterSpacing:1.5, color:"#94a3b8", textTransform:"uppercase", marginBottom:6 },
+  doc:        { background:"#fff", borderRadius:10, padding:"16px", boxShadow:"0 2px 12px rgba(0,0,0,0.08)", fontSize:11, maxHeight:"calc(100vh - 180px)", overflowY:"auto" },
 };
