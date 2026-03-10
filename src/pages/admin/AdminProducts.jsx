@@ -1,18 +1,27 @@
 import { useState, useRef } from "react";
 import { useProducts } from "../../hooks/useProducts";
+import { useCategories } from "../../hooks/useCategories";
 
-const EMPTY = { name: "", price: "", unit: "Nos", category: "", description: "", image: "", quantity: "" };
+const EMPTY = { name: "", price: "", costPrice: "", unit: "Nos", category: "", hsCode: "", description: "", image: "", quantity: "" };
 
 export default function AdminProducts() {
   const { products, loading, addProduct, updateProduct, deleteProduct, useLocal } = useProducts();
+  const { categories, addCategory, deleteCategory } = useCategories();
 
-  const [showModal,    setShowModal]    = useState(false);
-  const [editing,      setEditing]      = useState(null);
-  const [form,         setForm]         = useState(EMPTY);
+  // Category dropdown state
+  const [catDropOpen, setCatDropOpen] = useState(false);
+  const [catSearch, setCatSearch] = useState("");
+  const [addingCat, setAddingCat] = useState(false);
+  const [newCatName, setNewCatName] = useState("");
+  const catRef = useRef();
+
+  const [showModal, setShowModal] = useState(false);
+  const [editing, setEditing] = useState(null);
+  const [form, setForm] = useState(EMPTY);
   const [imagePreview, setImagePreview] = useState("");
-  const [search,       setSearch]       = useState("");
-  const [delConfirm,   setDelConfirm]   = useState(null);
-  const [saving,       setSaving]       = useState(false);
+  const [search, setSearch] = useState("");
+  const [delConfirm, setDelConfirm] = useState(null);
+  const [saving, setSaving] = useState(false);
   const [uploadProgress, setUploadProgress] = useState("");
   const fileRef = useRef();
 
@@ -35,8 +44,10 @@ export default function AdminProducts() {
     setForm({
       name: p.name,
       price: p.price || "",
+      costPrice: p.costPrice || "",
       unit: p.unit || "Nos",
       category: p.category || "",
+      hsCode: p.hsCode || "",
       description: p.description || "",
       image: p.image || "",
       quantity: p.quantity !== undefined ? String(p.quantity) : "",
@@ -141,7 +152,11 @@ export default function AdminProducts() {
       return;
     }
     if (form.price !== "" && (isNaN(Number(form.price)) || Number(form.price) < 0)) {
-      alert("Price cannot be negative. Please enter a valid price.");
+      alert("Selling price cannot be negative.");
+      return;
+    }
+    if (form.costPrice !== "" && (isNaN(Number(form.costPrice)) || Number(form.costPrice) < 0)) {
+      alert("Cost price cannot be negative.");
       return;
     }
     setSaving(true);
@@ -157,8 +172,10 @@ export default function AdminProducts() {
       const productData = {
         name: form.name.trim(),
         price: form.price ? Math.abs(Number(form.price)).toString() : "",
+        costPrice: form.costPrice ? Math.abs(Number(form.costPrice)).toString() : "",
         unit: form.unit,
         category: form.category,
+        hsCode: form.hsCode.trim(),
         description: form.description,
         image: imageUrl,
         quantity: form.quantity !== "" ? Number(form.quantity) : 0,
@@ -234,7 +251,7 @@ export default function AdminProducts() {
             <p>Loading products…</p>
           </div>
 
-        /* ── Empty ── */
+          /* ── Empty ── */
         ) : filtered.length === 0 ? (
           <div style={s.empty}>
             <div style={{ fontSize: 56 }}>📦</div>
@@ -248,7 +265,7 @@ export default function AdminProducts() {
             )}
           </div>
 
-        /* ── Card Grid ── */
+          /* ── Card Grid ── */
         ) : (
           <div className="admin-products-grid" style={s.grid}>
             {filtered.map(product => (
@@ -258,7 +275,7 @@ export default function AdminProducts() {
                 <div style={s.imageWrap}>
                   {product.image
                     ? <img src={product.image} alt={product.name} style={s.image}
-                        onError={e => { e.target.style.display = "none"; }} />
+                      onError={e => { e.target.style.display = "none"; }} />
                     : <div style={s.imagePlaceholder}>⚙️</div>
                   }
                   {product.category && (
@@ -276,11 +293,16 @@ export default function AdminProducts() {
                     <span style={s.unitTag}>📦 per {product.unit}</span>
                   )}
                   <p style={s.price}>
-                    {product.price
-                      ? `Rs${Number(product.price).toLocaleString("en-IN")}`
-                      : "Get Latest Price"
+                    SP: {product.price
+                      ? `Rs ${Number(product.price).toLocaleString("en-IN")}`
+                      : "—"
                     }
                   </p>
+                  {product.costPrice && (
+                    <p style={{ fontSize: 12, color: "#64748b", margin: "0 0 6px", fontWeight: 600 }}>
+                      CP: Rs {Number(product.costPrice).toLocaleString("en-IN")}
+                    </p>
+                  )}
 
                   {/* Admin actions */}
                   <div style={s.cardActions}>
@@ -306,7 +328,7 @@ export default function AdminProducts() {
               {editing ? "✏️ Edit Product" : "➕ Add New Product"}
             </h2>
 
-            <label style={s.fieldLabel}>Product Name <span style={{color:'#ef4444',fontWeight:700}}>*</span></label>
+            <label style={s.fieldLabel}>Product Name <span style={{ color: '#ef4444', fontWeight: 700 }}>*</span></label>
             <input
               style={s.input}
               placeholder="e.g. Annulus Ring Gear Set"
@@ -316,7 +338,7 @@ export default function AdminProducts() {
 
             <div className="modal-two-col" style={s.twoCol}>
               <div>
-                <label style={s.fieldLabel}>Price (Rs)</label>
+                <label style={s.fieldLabel}>Selling Price - SP (Rs)</label>
                 <input
                   type="number"
                   min="0"
@@ -332,14 +354,37 @@ export default function AdminProducts() {
                 />
               </div>
               <div>
-                <label style={s.fieldLabel}>Unit</label>
+                <label style={s.fieldLabel}>Cost Price - CP (Rs)</label>
                 <input
+                  type="number"
+                  min="0"
                   style={s.input}
-                  placeholder="Nos / Set / Kit / Pcs"
-                  value={form.unit}
-                  onChange={e => setForm(f => ({ ...f, unit: e.target.value }))}
+                  placeholder="e.g. 3000"
+                  value={form.costPrice}
+                  onChange={e => {
+                    const val = e.target.value;
+                    if (val === "" || Number(val) >= 0) {
+                      setForm(f => ({ ...f, costPrice: val }));
+                    }
+                  }}
                 />
               </div>
+            </div>
+
+            <div className="modal-two-col" style={s.twoCol}>
+              <div>
+                <label style={s.fieldLabel}>Unit</label>
+                <select
+                  style={s.input}
+                  value={form.unit}
+                  onChange={e => setForm(f => ({ ...f, unit: e.target.value }))}
+                >
+                  {["Nos", "Set", "Kit", "Pcs"].map(u => (
+                    <option key={u} value={u}>{u}</option>
+                  ))}
+                </select>
+              </div>
+              <div />
             </div>
 
             <div className="modal-two-col" style={s.twoCol}>
@@ -370,13 +415,141 @@ export default function AdminProducts() {
               <div />
             </div>
 
+            <div className="modal-two-col" style={s.twoCol}>
+              <div>
+                <label style={s.fieldLabel}>HS Code</label>
+                <input
+                  style={s.input}
+                  placeholder="e.g. 84314990"
+                  value={form.hsCode}
+                  onChange={e => setForm(f => ({ ...f, hsCode: e.target.value }))}
+                />
+              </div>
+              <div />
+            </div>
+
             <label style={s.fieldLabel}>Category</label>
-            <input
-              style={s.input}
-              placeholder="e.g. Gears, Pins, Seals"
-              value={form.category}
-              onChange={e => setForm(f => ({ ...f, category: e.target.value }))}
-            />
+            <div style={{ position: "relative", marginBottom: 14 }} ref={catRef}>
+              {/* Selected / search input */}
+              <div
+                style={{ ...s.input, marginBottom: 0, display: "flex", alignItems: "center", cursor: "pointer", gap: 6 }}
+                onClick={() => { setCatDropOpen(o => !o); setCatSearch(""); setAddingCat(false); }}
+              >
+                <span style={{ flex: 1, color: form.category ? "#0f172a" : "#94a3b8" }}>
+                  {form.category || "Select category…"}
+                </span>
+                <span style={{ fontSize: 10, color: "#94a3b8" }}>{catDropOpen ? "▲" : "▼"}</span>
+              </div>
+
+              {catDropOpen && (
+                <div style={{
+                  position: "absolute", top: "100%", left: 0, right: 0, zIndex: 60,
+                  background: "#fff", borderRadius: 10, border: "1.5px solid #e2e8f0",
+                  boxShadow: "0 8px 28px rgba(0,0,0,0.12)", maxHeight: 240, overflowY: "auto", marginTop: 4,
+                }}>
+                  {/* Search filter */}
+                  <div style={{ padding: "8px 10px", borderBottom: "1px solid #f1f5f9" }}>
+                    <input
+                      autoFocus
+                      style={{ ...s.input, marginBottom: 0, fontSize: 12 }}
+                      placeholder="🔍 Search categories…"
+                      value={catSearch}
+                      onChange={e => setCatSearch(e.target.value)}
+                      onClick={e => e.stopPropagation()}
+                    />
+                  </div>
+
+                  {/* "None" option */}
+                  <div
+                    style={{ padding: "8px 12px", cursor: "pointer", fontSize: 13, color: "#94a3b8", borderBottom: "1px solid #f8fafc" }}
+                    onMouseDown={e => e.preventDefault()}
+                    onClick={() => { setForm(f => ({ ...f, category: "" })); setCatDropOpen(false); }}
+                  >
+                    — None —
+                  </div>
+
+                  {/* Category list */}
+                  {categories
+                    .filter(c => c.name.toLowerCase().includes(catSearch.toLowerCase()))
+                    .map(c => (
+                      <div
+                        key={c.id}
+                        style={{
+                          padding: "8px 12px", cursor: "pointer", fontSize: 13, display: "flex",
+                          justifyContent: "space-between", alignItems: "center",
+                          background: form.category === c.name ? "#f0f9ff" : "transparent",
+                          borderBottom: "1px solid #f8fafc",
+                        }}
+                        onMouseDown={e => e.preventDefault()}
+                        onClick={() => { setForm(f => ({ ...f, category: c.name })); setCatDropOpen(false); }}
+                      >
+                        <span style={{ fontWeight: form.category === c.name ? 700 : 400, color: "#0f172a" }}>
+                          {form.category === c.name && "✓ "}{c.name}
+                        </span>
+                        <button
+                          style={{ background: "none", border: "none", color: "#ef4444", cursor: "pointer", fontSize: 12, padding: "2px 4px" }}
+                          title="Delete category"
+                          onClick={e => {
+                            e.stopPropagation();
+                            if (window.confirm(`Delete category "${c.name}"?`)) {
+                              deleteCategory(c.id);
+                              if (form.category === c.name) setForm(f => ({ ...f, category: "" }));
+                            }
+                          }}
+                        >
+                          🗑
+                        </button>
+                      </div>
+                    ))
+                  }
+
+                  {/* Add new category */}
+                  {!addingCat ? (
+                    <div
+                      style={{ padding: "9px 12px", cursor: "pointer", fontSize: 13, fontWeight: 600, color: PRIMARY, borderTop: "1px solid #f1f5f9" }}
+                      onMouseDown={e => e.preventDefault()}
+                      onClick={() => { setAddingCat(true); setNewCatName(catSearch); }}
+                    >
+                      ➕ Add New Category
+                    </div>
+                  ) : (
+                    <div style={{ padding: "8px 10px", display: "flex", gap: 6, borderTop: "1px solid #f1f5f9" }}>
+                      <input
+                        autoFocus
+                        style={{ ...s.input, marginBottom: 0, flex: 1, fontSize: 12 }}
+                        placeholder="New category name"
+                        value={newCatName}
+                        onChange={e => setNewCatName(e.target.value)}
+                        onKeyDown={async e => {
+                          if (e.key === "Enter" && newCatName.trim()) {
+                            await addCategory(newCatName.trim());
+                            setForm(f => ({ ...f, category: newCatName.trim() }));
+                            setAddingCat(false);
+                            setNewCatName("");
+                            setCatDropOpen(false);
+                          }
+                        }}
+                        onClick={e => e.stopPropagation()}
+                      />
+                      <button
+                        style={{ background: PRIMARY, color: "#fff", border: "none", borderRadius: 6, padding: "4px 12px", fontSize: 12, fontWeight: 700, cursor: "pointer" }}
+                        onClick={async () => {
+                          if (newCatName.trim()) {
+                            await addCategory(newCatName.trim());
+                            setForm(f => ({ ...f, category: newCatName.trim() }));
+                            setAddingCat(false);
+                            setNewCatName("");
+                            setCatDropOpen(false);
+                          }
+                        }}
+                      >
+                        Add
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
 
             <label style={s.fieldLabel}>Description</label>
             <textarea
@@ -492,11 +665,11 @@ const s = {
   price: { color: PRIMARY, fontWeight: 700, fontSize: 18, margin: "0 0 12px" },
   cardActions: { display: "flex", gap: 8 },
   btn: { padding: "9px 14px", borderRadius: 8, border: "none", fontSize: 13, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" },
-  btnPrimary:   { background: `linear-gradient(135deg,${PRIMARY},${PRIMARY_LIGHT})`, color: "#fff", boxShadow: "0 2px 8px rgba(234,88,12,0.2)" },
+  btnPrimary: { background: `linear-gradient(135deg,${PRIMARY},${PRIMARY_LIGHT})`, color: "#fff", boxShadow: "0 2px 8px rgba(234,88,12,0.2)" },
   btnSecondary: { background: "#f1f5f9", color: "#334155" },
-  btnDanger:    { background: "#fee2e2", color: "#b91c1c" },
-  btnOutline:   { background: "#fff", color: PRIMARY, border: `1.5px solid ${PRIMARY}` },
-  btnWa:        { background: "#dcfce7", color: "#16a34a" },
+  btnDanger: { background: "#fee2e2", color: "#b91c1c" },
+  btnOutline: { background: "#fff", color: PRIMARY, border: `1.5px solid ${PRIMARY}` },
+  btnWa: { background: "#dcfce7", color: "#16a34a" },
   overlay: { position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 999, padding: 16, backdropFilter: "blur(4px)" },
   modal: { background: "#fff", borderRadius: 18, padding: 28, width: "100%", maxWidth: 500, boxShadow: "0 20px 60px rgba(0,0,0,0.2)", maxHeight: "90vh", overflowY: "auto" },
   modalTitle: { fontSize: 20, fontWeight: 800, color: "#0f172a", marginTop: 0, marginBottom: 20 },
