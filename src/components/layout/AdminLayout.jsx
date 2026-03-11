@@ -1,13 +1,20 @@
 import { useState } from "react";
 import { useAuth } from "../../hooks/useAuth";
 import { useContacts } from "../../hooks/useContacts";
+import { useProducts } from "../../hooks/useProducts"; // <-- ADD THIS
 import AdminSidebar from "./AdminSidebar";
 
 export default function AdminLayout({ children }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const { user, logout } = useAuth();
   const { unreadCount } = useContacts();
+  const { products = [] } = useProducts(); // <-- ADD THIS
   const [searchValue, setSearchValue] = useState("");
+
+  // Calculate low stock count (quantity < 5)
+  const lowStockCount = products.filter(p => p.quantity !== undefined && p.quantity < 5).length;
+  const notifTotal = unreadCount + lowStockCount;
+  const showNotif = notifTotal > 0;
 
   const sidebarW = sidebarCollapsed ? 72 : 260;
 
@@ -41,7 +48,7 @@ export default function AdminLayout({ children }) {
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/>
                 </svg>
-                {unreadCount > 0 && <span style={st.notifDot}>{unreadCount}</span>}
+                {showNotif && <span style={st.notifDot}>{notifTotal}</span>}
               </button>
 
               {/* Divider */}
