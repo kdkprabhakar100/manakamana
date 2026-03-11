@@ -2,6 +2,8 @@ import { useState, useRef, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useProducts } from "../../hooks/useProducts";
 import { useInvoices } from "../../hooks/useInvoices";
+import { doc, updateDoc } from "firebase/firestore";
+import { db } from "../../firebase/config";
 
 
 const TAX_RATE = 0.13;
@@ -178,6 +180,17 @@ export default function AdminInvoice() {
       alert(`Cannot save invoice — stock issues:\n\n${stockErrors.join('\n')}\n\nPlease adjust quantities or restock.`);
       return;
     }
+
+    // After saving the invoice, decrement product quantities
+    for (const item of items) {
+    if (!item.productId) continue; // skip custom lines
+      const product = products.find(p => p.id === item.productId);
+    if (product) {
+      const newQty = Math.max(0, (product.quantity || 0) - item.qty);
+      await updateDoc(doc(db, "products", product.id), { quantity: newQty });
+    }
+}
+
     setSaving(true);
     const data = {
       invoiceNo, invoiceDate, dueDate, docType,
@@ -189,6 +202,16 @@ export default function AdminInvoice() {
     try {
       if (id && id !== "new") await updateInvoice(id, data);
       else await saveInvoice(data);
+
+       for (const item of items) {
+       if (!item.productId) continue; // skip custom lines
+       const product = products.find(p => p.id === item.productId);
+       if (product) {
+         const newQty = Math.max(0, (product.quantity || 0) - item.qty);
+        await updateDoc(doc(db, "products", product.id), { quantity: newQty });
+      }
+    }
+
       navigate("/admin/invoices");
     } finally {
       setSaving(false);

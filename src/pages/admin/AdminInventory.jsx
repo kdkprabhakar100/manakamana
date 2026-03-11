@@ -100,6 +100,7 @@ export default function AdminInventory() {
                                     <th style={s.th}>Unit</th>
                                     <th style={s.th}>Rack</th>
                                     <th style={s.th}>Section</th>
+                                    <th style={s.th}>Number of Products</th>
                                     <th style={{ ...s.th, ...s.thRight }}>Opening</th>
                                     <th style={{ ...s.th, ...s.thRight }}>Received</th>
                                     <th style={{ ...s.th, ...s.thRight }}>Delivered</th>
@@ -122,6 +123,7 @@ export default function AdminInventory() {
                                             <td style={s.td}>{item.unit || "NOS"}</td>
                                             <td style={s.td}>{item.rack || "—"}</td>
                                             <td style={s.td}>{item.section || "—"}</td>
+                                            <td style={s.td}>{item.quantity}</td>
                                             <td style={{ ...s.td, ...s.tdRight, color: "#475569" }}>{Number(item.opening).toFixed(3)}</td>
                                             <td style={{ ...s.td, ...s.tdRight, color: "#16a34a" }}>{Number(item.received).toFixed(3)}</td>
                                             <td style={{ ...s.td, ...s.tdRight, color: "#ef4444" }}>{Number(item.delivered).toFixed(3)}</td>
