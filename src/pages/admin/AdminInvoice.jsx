@@ -646,6 +646,7 @@ function Card({ title, children }) {
 }
 
 const s = {
+    docCompany: { fontSize: 18, fontWeight: 800, textAlign: "center", marginBottom: 4, color: "#0f172a", letterSpacing: 1.2 },
   page:       { fontFamily:"'Segoe UI',sans-serif", background:"#f1f5f9", minHeight:"100vh", padding:"24px 16px" },
   topBar:     { display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:20, flexWrap:"wrap", gap:12 },
   backBtn:    { background:"#e0f2fe", border:"1.5px solid #bae6fd", borderRadius:8, padding:"8px 14px", fontSize:13, fontWeight:600, cursor:"pointer", color:"#0369a1" },
