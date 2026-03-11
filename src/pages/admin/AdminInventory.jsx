@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { useProducts } from "../../hooks/useProducts";
 import { useInvoices } from "../../hooks/useInvoices";
 
+
 export default function AdminInventory() {
     const { products, loading: pLoading } = useProducts();
     const { invoices, loading: iLoading } = useInvoices();
@@ -97,6 +98,8 @@ export default function AdminInventory() {
                                     <th style={s.th}>Product Code / HS</th>
                                     <th style={{ ...s.th, textAlign: "left" }}>Product Name & Category</th>
                                     <th style={s.th}>Unit</th>
+                                    <th style={s.th}>Rack</th>
+                                    <th style={s.th}>Section</th>
                                     <th style={{ ...s.th, ...s.thRight }}>Opening</th>
                                     <th style={{ ...s.th, ...s.thRight }}>Received</th>
                                     <th style={{ ...s.th, ...s.thRight }}>Delivered</th>
@@ -117,6 +120,8 @@ export default function AdminInventory() {
                                                 {item.category && <div style={s.itemCat}>{item.category}</div>}
                                             </td>
                                             <td style={s.td}>{item.unit || "NOS"}</td>
+                                            <td style={s.td}>{item.rack || "—"}</td>
+                                            <td style={s.td}>{item.section || "—"}</td>
                                             <td style={{ ...s.td, ...s.tdRight, color: "#475569" }}>{Number(item.opening).toFixed(3)}</td>
                                             <td style={{ ...s.td, ...s.tdRight, color: "#16a34a" }}>{Number(item.received).toFixed(3)}</td>
                                             <td style={{ ...s.td, ...s.tdRight, color: "#ef4444" }}>{Number(item.delivered).toFixed(3)}</td>
@@ -163,7 +168,7 @@ const s = {
     printBtn: { background: `linear-gradient(135deg, ${PRIMARY}, #10b981)`, color: "#fff", border: "none", borderRadius: 8, padding: "10px 18px", fontSize: 13, fontWeight: 700, cursor: "pointer", boxShadow: "0 2px 8px rgba(5, 150, 105, 0.25)" },
     card: { background: "#fff", borderRadius: 16, overflow: "hidden", boxShadow: "0 4px 20px rgba(0,0,0,0.05)", border: "1px solid #e2e8f0" },
     tableWrap: { overflowX: "auto" },
-    table: { width: "100%", borderCollapse: "collapse", minWidth: 800 },
+    table: { width: "100%", borderCollapse: "collapse", minWidth: 1000 },
     trHead: { background: "#f1f5f9", borderBottom: "2px solid #e2e8f0" },
     th: { padding: "14px 16px", textAlign: "center", fontSize: 12, fontWeight: 700, color: "#475569", textTransform: "uppercase", letterSpacing: 0.5 },
     thRight: { textAlign: "right" },
