@@ -5,8 +5,12 @@ import { useInvoices } from "../../hooks/useInvoices";
 import { doc, updateDoc } from "firebase/firestore";
 import { db } from "../../firebase/config";
 
-const TAX_RATE = 0.13;
+const TAX_RATE    = 0.13;
+const ITEMS_PER_PAGE = 20; // max items before forcing a new page (A4 fills naturally below this)
 
+/* ─────────────────────────────────────────────
+   Helpers
+───────────────────────────────────────────── */
 function numberToWords(n) {
   if (n === 0) return "Zero";
   const ones = ["","One","Two","Three","Four","Five","Six","Seven","Eight","Nine",
@@ -14,11 +18,11 @@ function numberToWords(n) {
   const tens = ["","","Twenty","Thirty","Forty","Fifty","Sixty","Seventy","Eighty","Ninety"];
   function convert(num) {
     if (num < 20) return ones[num];
-    if (num < 100) return tens[Math.floor(num/10)] + (num%10?" "+ones[num%10]:"");
-    if (num < 1000) return ones[Math.floor(num/100)]+" Hundred"+(num%100?" "+convert(num%100):"");
-    if (num < 100000) return convert(Math.floor(num/1000))+" Thousand"+(num%1000?" "+convert(num%1000):"");
-    if (num < 10000000) return convert(Math.floor(num/100000))+" Lakh"+(num%100000?" "+convert(num%100000):"");
-    return convert(Math.floor(num/10000000))+" Crore"+(num%10000000?" "+convert(num%10000000):"");
+    if (num < 100) return tens[Math.floor(num/10)] + (num%10 ? " "+ones[num%10] : "");
+    if (num < 1000) return ones[Math.floor(num/100)]+" Hundred"+(num%100 ? " "+convert(num%100) : "");
+    if (num < 100000) return convert(Math.floor(num/1000))+" Thousand"+(num%1000 ? " "+convert(num%1000) : "");
+    if (num < 10000000) return convert(Math.floor(num/100000))+" Lakh"+(num%100000 ? " "+convert(num%100000) : "");
+    return convert(Math.floor(num/10000000))+" Crore"+(num%10000000 ? " "+convert(num%10000000) : "");
   }
   const rupees = Math.floor(n);
   const paisa  = Math.round((n - rupees) * 100);
@@ -36,9 +40,9 @@ function newInvoiceNo() {
   return `SB-${String(_counter++).padStart(5, "0")}`;
 }
 
-const B = "1px solid #1a1a2e";
-
-/* ─── Shared print + preview CSS injected into the print window ─── */
+/* ─────────────────────────────────────────────
+   Shared CSS — used in both preview & print
+───────────────────────────────────────────── */
 const PRINT_STYLES = `
   @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap');
 
@@ -46,86 +50,104 @@ const PRINT_STYLES = `
 
   body {
     font-family: 'Nunito', 'Segoe UI', sans-serif;
-    font-size: 11pt;
     color: #111;
     background: #fff;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
 
-  /* ── A4 page wrapper ── */
+  /* Each page is exactly A4 */
   .invoice-page {
     width: 210mm;
-    min-height: 297mm;
-    margin: 0 auto;
-    padding: 12mm 14mm 12mm 14mm;
+    height: 297mm;
+    max-height: 297mm;
+    overflow: hidden;
+    padding: 10mm 13mm 10mm 13mm;
     background: #fff;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* page break between pages */
+  .invoice-page + .invoice-page {
+    page-break-before: always;
+    break-before: page;
   }
 
   /* ── Company header ── */
   .inv-header {
     text-align: center;
-    padding-bottom: 6pt;
+    padding-bottom: 5pt;
     border-bottom: 2px solid #1a1a2e;
-    margin-bottom: 6pt;
+    margin-bottom: 5pt;
+    flex-shrink: 0;
   }
   .inv-header .co-name {
-    font-size: 16pt;
+    font-size: 15pt;
     font-weight: 800;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.4px;
     line-height: 1.2;
     color: #1a1a2e;
   }
   .inv-header .co-sub {
-    font-size: 9pt;
+    font-size: 8.5pt;
     font-weight: 600;
     color: #444;
-    margin-top: 2pt;
-    line-height: 1.4;
+    margin-top: 1.5pt;
+  }
+
+  /* ── page label (Page X of Y) ── */
+  .page-label {
+    font-size: 8pt;
+    color: #666;
+    text-align: right;
+    margin-bottom: 3pt;
+    flex-shrink: 0;
   }
 
   /* ── Info grid (customer + invoice meta) ── */
   .info-grid {
     width: 100%;
     border-collapse: collapse;
-    margin-bottom: 0;
     border: 1.5px solid #1a1a2e;
+    flex-shrink: 0;
   }
   .info-grid td {
-    padding: 5pt 7pt;
+    padding: 4pt 6pt;
     vertical-align: top;
-    font-size: 9.5pt;
+    font-size: 9pt;
     border: none;
   }
   .info-grid .left-col {
     width: 57%;
     border-right: 1.5px solid #1a1a2e;
   }
-  .info-kv {
-    width: 100%;
-    border-collapse: collapse;
-  }
-  .info-kv td {
-    padding: 1.5pt 2pt;
-    vertical-align: top;
-    font-size: 9.5pt;
-    border: none;
-  }
-  .info-kv .lbl { font-weight: 700; white-space: nowrap; padding-right: 3pt; }
-  .info-kv .colon { padding-right: 4pt; }
+  .info-kv { width: 100%; border-collapse: collapse; }
+  .info-kv td { padding: 1pt 2pt; vertical-align: top; font-size: 9pt; border: none; }
+  .info-kv .lbl    { font-weight: 700; white-space: nowrap; padding-right: 3pt; }
+  .info-kv .colon  { padding-right: 4pt; }
   .info-kv .val-bold { font-weight: 800; }
+
+  /* ── Items table wrapper — grows to fill remaining page space ── */
+  .items-table-wrap {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
 
   /* ── Items table ── */
   .items-table {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 0;
+    table-layout: fixed;
+    flex: 1;
   }
   .items-table th {
     border: 1.5px solid #1a1a2e;
     border-top: none;
-    padding: 5pt 5pt;
-    font-size: 9.5pt;
+    padding: 4pt 4pt;
+    font-size: 9pt;
     font-weight: 800;
     text-align: center;
     background: #f0f4ff;
@@ -136,83 +158,85 @@ const PRINT_STYLES = `
   .items-table td {
     border: 1.5px solid #1a1a2e;
     border-top: none;
-    padding: 4pt 5pt;
-    font-size: 9.5pt;
+    padding: 3.5pt 4pt;
+    font-size: 9pt;
     vertical-align: middle;
   }
   .items-table td:not(:first-child) { border-left: none; }
   .items-table td.center { text-align: center; }
   .items-table td.right  { text-align: right; }
   .items-table td.bold   { font-weight: 700; }
+  /* stretch-row expands to fill leftover vertical space */
+  .items-table tr.stretch-row { height: 100%; }
+  .items-table tr.stretch-row td { height: 100%; vertical-align: top; }
   .items-table tr.empty-row td { height: 16pt; }
 
+  /* continued label shown on non-last pages */
+  .continued-label {
+    text-align: right;
+    font-size: 8.5pt;
+    font-style: italic;
+    color: #555;
+    padding: 4pt 2pt;
+    flex-shrink: 0;
+  }
+
   /* ── Totals section ── */
-  .totals-table {
-    width: 100%;
-    border-collapse: collapse;
-  }
-  .totals-table td {
-    border: 1.5px solid #1a1a2e;
-    border-top: none;
-    vertical-align: top;
-  }
+  .totals-table { width: 100%; border-collapse: collapse; flex-shrink: 0; }
+  .totals-table td { border: 1.5px solid #1a1a2e; border-top: none; vertical-align: top; }
   .inwords-cell {
     width: 55%;
-    padding: 6pt 8pt;
-    font-size: 9.5pt;
+    padding: 5pt 7pt;
+    font-size: 9pt;
     border-right: none;
   }
-  .totals-cell {
-    padding: 0;
-  }
+  .totals-cell { padding: 0; }
   .total-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 3pt 8pt;
-    font-size: 9.5pt;
+    padding: 2.5pt 7pt;
+    font-size: 9pt;
     border-bottom: 1px solid #1a1a2e;
   }
   .total-row:last-child { border-bottom: none; }
   .total-row.grand { font-weight: 800; background: #f0f4ff; }
   .total-row .t-val { display: flex; gap: 6pt; }
-  .total-row .t-num { min-width: 72pt; text-align: right; }
+  .total-row .t-num { min-width: 70pt; text-align: right; }
 
   /* ── Remarks ── */
-  .remarks { font-size: 9.5pt; margin-top: 8pt; }
+  .remarks { font-size: 9pt; margin-top: 7pt; flex-shrink: 0; }
 
   /* ── Signatures ── */
   .sig-grid {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr 1fr;
-    margin-top: 28pt;
-    gap: 0;
+    margin-top: 18pt;
+    flex-shrink: 0;
   }
-  .sig-col { text-align: center; padding: 0 6pt; }
-  .sig-name { font-weight: 700; font-size: 10pt; height: 18pt; display: flex; align-items: flex-end; justify-content: center; }
-  .sig-line { border-top: 1.5px solid #1a1a2e; margin-top: 2pt; margin-bottom: 3pt; }
-  .sig-role { font-size: 9pt; color: #333; }
+  .sig-col { text-align: center; padding: 0 5pt; }
+  .sig-name { font-weight: 700; font-size: 9.5pt; height: 16pt; display: flex; align-items: flex-end; justify-content: center; }
+  .sig-line { border-top: 1.5px solid #1a1a2e; margin-top: 2pt; margin-bottom: 2pt; }
+  .sig-role { font-size: 8.5pt; color: #333; }
 
   /* ── Print date ── */
-  .print-date { font-size: 8.5pt; color: #555; margin-top: 10pt; }
+  .print-date { font-size: 8pt; color: #555; margin-top: 7pt; flex-shrink: 0; }
 
   /* ── Print media ── */
-  @page {
-    size: A4 portrait;
-    margin: 0;
-  }
+  @page { size: A4 portrait; margin: 0; }
   @media print {
     html, body { margin: 0; padding: 0; width: 210mm; }
-    .invoice-page { padding: 12mm 14mm; box-shadow: none; }
-    thead { display: table-header-group; }
-    tr { page-break-inside: avoid; }
+    .invoice-page { box-shadow: none; }
   }
 `;
 
+/* ─────────────────────────────────────────────
+   Main Component
+───────────────────────────────────────────── */
 export default function AdminInvoice() {
-  const { id }      = useParams();
-  const navigate    = useNavigate();
-  const printRef    = useRef();
+  const { id }    = useParams();
+  const navigate  = useNavigate();
+  const printRef  = useRef();
 
   const { products }                             = useProducts();
   const { invoices, saveInvoice, updateInvoice } = useInvoices();
@@ -229,8 +253,6 @@ export default function AdminInvoice() {
     fy: "FY2082/083",
   };
   const EMPTY_CLIENT = { name: "", address: "", phone: "", gstin: "", payment: "Cash/Credit" };
-  const DEFAULT_NOTES = "";
-  const DEFAULT_TERMS = "Payment due within 30 days.\nGoods once sold will not be taken back.";
 
   const [invoiceNo,   setInvoiceNo]   = useState(newInvoiceNo);
   const [invoiceDate, setInvoiceDate] = useState(today());
@@ -241,8 +263,8 @@ export default function AdminInvoice() {
   const [items,       setItems]       = useState([]);
   const [taxEnabled,  setTaxEnabled]  = useState(true);
   const [discountPct, setDiscountPct] = useState(0);
-  const [notes,       setNotes]       = useState(DEFAULT_NOTES);
-  const [terms,       setTerms]       = useState(DEFAULT_TERMS);
+  const [notes,       setNotes]       = useState("");
+  const [terms,       setTerms]       = useState("Payment due within 30 days.\nGoods once sold will not be taken back.");
   const [editCompany, setEditCompany] = useState(false);
   const [search,      setSearch]      = useState("");
   const [showDrop,    setShowDrop]    = useState(false);
@@ -260,20 +282,30 @@ export default function AdminInvoice() {
         setItems(existing.items || []);
         setDiscountPct(existing.discountPct || 0);
         setTaxEnabled(existing.taxEnabled ?? true);
-        setNotes(existing.notes || DEFAULT_NOTES);
-        setTerms(existing.terms || DEFAULT_TERMS);
+        setNotes(existing.notes || "");
+        setTerms(existing.terms || "");
         setCompany(existing.company || DEFAULT_COMPANY);
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, invoices]);
 
+  /* ── Calculations ── */
   const subtotal = items.reduce((s, i) => s + i.qty * i.rate, 0);
   const discount = subtotal * (discountPct / 100);
   const taxable  = subtotal - discount;
   const tax      = taxEnabled ? taxable * TAX_RATE : 0;
   const total    = taxable + tax;
 
+  const totalRows = [
+    ["Sub Total",     fmt(subtotal), false],
+    ...(discountPct > 0 ? [[`Discount (${discountPct}%)`, fmt(discount), false]] : []),
+    ["Taxable Value", fmt(taxable),  false],
+    ...(taxEnabled    ? [["13% VAT", fmt(tax), false]] : []),
+    ["Total Amount",  fmt(total),    true],
+  ];
+
+  /* ── Product search ── */
   const filtered = search.trim()
     ? products.filter(p =>
         p.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -291,11 +323,11 @@ export default function AdminInvoice() {
       setItems(prev => [...prev, {
         id: Date.now() + Math.random(),
         productId: product.id,
-        hsCode:    product.hsCode || "",
-        name:      product.name,
-        unit:      product.unit || "NOS",
-        qty:       1,
-        rate:      Number(product.price) || 0,
+        hsCode: product.hsCode || "",
+        name:   product.name,
+        unit:   product.unit || "NOS",
+        qty:    1,
+        rate:   Number(product.price) || 0,
       }]);
     }
     setSearch("");
@@ -314,6 +346,7 @@ export default function AdminInvoice() {
       i.id === id ? { ...i, qty: Math.max(1, i.qty + delta) } : i
     ));
 
+  /* ── Save ── */
   const handleSave = async () => {
     const missing = [];
     if (!client.name.trim())    missing.push("Client Name");
@@ -331,7 +364,7 @@ export default function AdminInvoice() {
       const prod = products.find(p => p.id === item.productId);
       if (!prod) continue;
       const stock = prod.quantity !== undefined ? Number(prod.quantity) : 0;
-      if (stock <= 0) stockErrors.push(`❌ ${prod.name} — out of stock (0 units)`);
+      if (stock <= 0)         stockErrors.push(`❌ ${prod.name} — out of stock (0 units)`);
       else if (item.qty > stock) stockErrors.push(`⚠️ ${prod.name} — only ${stock} in stock, but ${item.qty} requested`);
     }
     if (stockErrors.length > 0) {
@@ -363,7 +396,7 @@ export default function AdminInvoice() {
     }
   };
 
-  /* ── PRINT: inject CSS + clone node into A4 window ── */
+  /* ── Print ── */
   const handlePrint = () => {
     const safeTitle = `${docType} ${invoiceNo}`.replace(/[<>"'&]/g, "");
     const w = window.open("", "_blank");
@@ -384,11 +417,10 @@ export default function AdminInvoice() {
     w.document.close();
     const clone = printRef.current.cloneNode(true);
     clone.querySelectorAll("script").forEach(el => el.remove());
-    // strip inline style from the preview wrapper so print CSS fully takes over
     clone.removeAttribute("style");
     w.document.getElementById("print-root").appendChild(clone);
     w.focus();
-    setTimeout(() => { w.print(); w.close(); }, 800);
+    setTimeout(() => { w.print(); w.close(); }, 900);
   };
 
   const nowStr = () => {
@@ -397,164 +429,207 @@ export default function AdminInvoice() {
   };
 
   const dateTimeStr = invoiceDate ? `${invoiceDate} 12:00:00PM` : "—";
-  const MIN_ROWS     = 12;
-  const emptyRowCount = Math.max(0, MIN_ROWS - items.length);
 
-  /* ─── totals rows ─── */
-  const totalRows = [
-    ["Sub Total",     fmt(subtotal), false],
-    ...(discountPct > 0 ? [[`Discount (${discountPct}%)`, fmt(discount), false]] : []),
-    ["Taxable Value", fmt(taxable),  false],
-    ...(taxEnabled    ? [["13% VAT", fmt(tax), false]] : []),
-    ["Total Amount",  fmt(total),    true],
-  ];
+  /* ══════════════════════════════════════════════════
+     BUILD PAGES
+     — Split items into chunks of ITEMS_PER_PAGE
+     — Each page repeats header + customer info
+     — Only the last page shows totals + signatures
+  ══════════════════════════════════════════════════ */
+  const chunks = [];
+  if (items.length === 0) {
+    chunks.push([]);
+  } else {
+    for (let i = 0; i < items.length; i += ITEMS_PER_PAGE) {
+      chunks.push(items.slice(i, i + ITEMS_PER_PAGE));
+    }
+  }
+  const totalPages = chunks.length;
 
-  /* ══════════════════════════════════════════════════════
-     INVOICE DOCUMENT — shared between preview & print
-  ══════════════════════════════════════════════════════ */
-  const InvoiceDoc = (
-    <div className="invoice-page" ref={printRef}>
-
-      {/* 1 ── COMPANY HEADER */}
-      <div className="inv-header">
-        <div className="co-name">{company.name} [{company.fy || "FY2082/083"}]</div>
-        <div className="co-sub">Phone : {company.phone}&nbsp;&nbsp;|&nbsp;&nbsp;PAN NO : {company.pan || "XXXXXXXXX"}</div>
-      </div>
-
-      {/* 2 ── CUSTOMER INFO + INVOICE META */}
-      <table className="info-grid">
-        <tbody>
-          <tr>
-            {/* LEFT – customer */}
-            <td className="left-col">
-              <table className="info-kv">
-                <tbody>
-                  {[
-                    ["Customer",    client.name || "—",               true],
-                    ["Address",     "Address : " + (client.address || "—"), false],
-                    ["Contact No.", client.phone || "—",              false],
-                    ["VAT/PAN No.", client.gstin || "—",              false],
-                    ["Payment",     client.payment || "Cash/Credit",  false],
-                  ].map(([lbl, val, bold]) => (
-                    <tr key={lbl}>
-                      <td className="lbl">{lbl}</td>
-                      <td className="colon">:</td>
-                      <td className={bold ? "val-bold" : ""}>{val}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </td>
-
-            {/* RIGHT – invoice meta */}
-            <td>
-              <table className="info-kv">
-                <tbody>
-                  {[
-                    ["Invoice No",    invoiceNo,    true],
-                    ["Date & Time",   dateTimeStr,  false],
-                    ["Miti",          dueDate || "—", false],
-                    ["Order No & Dt", "",           false],
-                    ["Transport",     "",           false],
-                  ].map(([lbl, val, bold]) => (
-                    <tr key={lbl}>
-                      <td className="lbl">{lbl}</td>
-                      <td className="colon">:</td>
-                      <td className={bold ? "val-bold" : ""}>{val}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-
-      {/* 3 ── ITEMS TABLE */}
-      <table className="items-table">
-        <thead>
-          <tr>
-            <th style={{width:"5%"}}>SNo</th>
-            <th style={{width:"11%"}}>HS Code</th>
-            <th className="left" style={{width:"32%"}}>Product</th>
-            <th style={{width:"10%"}}>Quantity</th>
-            <th style={{width:"8%"}}>Uom</th>
-            <th style={{width:"14%"}}>Rate</th>
-            <th style={{width:"20%"}}>Net Amount</th>
-          </tr>
-        </thead>
-        <tbody>
-          {items.map((item, idx) => (
-            <tr key={item.id}>
-              <td className="center">{idx + 1}</td>
-              <td className="center">{item.hsCode || ""}</td>
-              <td className="bold">{item.name}</td>
-              <td className="center">{fmt(item.qty)}</td>
-              <td className="center">{item.unit}</td>
-              <td className="right">{fmt(item.rate)}</td>
-              <td className="right bold">{fmt(item.qty * item.rate)}</td>
-            </tr>
-          ))}
-          {Array.from({ length: emptyRowCount }).map((_, ri) => (
-            <tr key={`e${ri}`} className="empty-row">
-              <td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td><td></td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-
-      {/* 4 ── IN WORDS + TOTALS */}
-      <table className="totals-table">
-        <tbody>
-          <tr>
-            <td className="inwords-cell">
-              <strong>In Words : </strong>{numberToWords(total)}
-            </td>
-            <td className="totals-cell">
-              {totalRows.map(([lbl, val, bold]) => (
-                <div key={lbl} className={`total-row${bold ? " grand" : ""}`}>
-                  <span>{lbl}</span>
-                  <span className="t-val">
-                    <span>:</span>
-                    <span className="t-num">{val}</span>
-                  </span>
-                </div>
-              ))}
-            </td>
-          </tr>
-        </tbody>
-      </table>
-
-      {/* 5 ── REMARKS */}
-      <div className="remarks">
-        <strong>Remarks :</strong> {notes}
-      </div>
-
-      {/* 6 ── SIGNATURES */}
-      <div className="sig-grid">
-        {[
-          { name: "",      role: "Received By" },
-          { name: "admin", role: "Prepared" },
-          { name: "admin", role: "Printed By" },
-          { name: "",      role: "Authorize By." },
-        ].map(({ name, role }) => (
-          <div key={role} className="sig-col">
-            <div className="sig-name">{name}</div>
-            <div className="sig-line" />
-            <div className="sig-role">{role}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* 7 ── PRINTED DATE */}
-      <div className="print-date">Printed Date &amp; Time : {nowStr()}</div>
+  /* ── shared: company header ── */
+  const HeaderBlock = () => (
+    <div className="inv-header">
+      <div className="co-name">{company.name} [{company.fy || "FY2082/083"}]</div>
+      <div className="co-sub">Phone : {company.phone}&nbsp;&nbsp;|&nbsp;&nbsp;PAN NO : {company.pan || "XXXXXXXXX"}</div>
     </div>
   );
+
+  /* ── shared: customer + invoice meta ── */
+  const InfoBlock = ({ pageNum }) => (
+    <table className="info-grid">
+      <tbody>
+        <tr>
+          <td className="left-col">
+            <table className="info-kv">
+              <tbody>
+                {[
+                  ["Customer",    client.name || "—",                    true],
+                  ["Contact No.", client.phone || "—",                   false],
+                  ["VAT/PAN No.", client.gstin || "—",                   false],
+                  ["Payment",     client.payment || "Cash/Credit",       false],
+                ].map(([lbl, val, bold]) => (
+                  <tr key={lbl}>
+                    <td className="lbl">{lbl}</td>
+                    <td className="colon">:</td>
+                    <td className={bold ? "val-bold" : ""}>{val}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </td>
+          <td>
+            <table className="info-kv">
+              <tbody>
+                {[
+                  ["Invoice No",    invoiceNo,      true],
+                  ["Date & Time",   dateTimeStr,    false],
+                  ["Miti",          dueDate || "—", false],
+                  ["Order No & Dt", "",             false],
+                  ["Transport",     "",             false],
+                ].map(([lbl, val, bold]) => (
+                  <tr key={lbl}>
+                    <td className="lbl">{lbl}</td>
+                    <td className="colon">:</td>
+                    <td className={bold ? "val-bold" : ""}>{val}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  );
+
+  /* ── shared: items table header row ── */
+  const TableHead = () => (
+    <thead>
+      <tr>
+        <th style={{width:"5%"}}>SNo</th>
+        <th style={{width:"11%"}}>HS Code</th>
+        <th className="left" style={{width:"32%"}}>Product</th>
+        <th style={{width:"10%"}}>Quantity</th>
+        <th style={{width:"8%"}}>Uom</th>
+        <th style={{width:"14%"}}>Rate</th>
+        <th style={{width:"20%"}}>Net Amount</th>
+      </tr>
+    </thead>
+  );
+
+  /* ── Build the full multi-page invoice JSX ── */
+  const InvoiceDoc = (
+    <div ref={printRef}>
+      {chunks.map((pageItems, pageIdx) => {
+        const isLastPage  = pageIdx === totalPages - 1;
+        const globalStart = pageIdx * ITEMS_PER_PAGE;
+
+        return (
+          <div className="invoice-page" key={pageIdx}>
+
+            {/* Header */}
+            <HeaderBlock />
+
+            {/* Page X of Y label */}
+            {totalPages > 1 && (
+              <div className="page-label">Page {pageIdx + 1} of {totalPages}</div>
+            )}
+
+            {/* Customer + Invoice meta */}
+            <InfoBlock pageNum={pageIdx + 1} />
+
+            {/* Items table — wrapped in flex-grow div so it fills remaining page height */}
+            <div className="items-table-wrap">
+              <table className="items-table">
+                <TableHead />
+                <tbody>
+                  {pageItems.map((item, idx) => (
+                    <tr key={item.id}>
+                      <td className="center">{globalStart + idx + 1}</td>
+                      <td className="center">{item.hsCode || ""}</td>
+                      <td className="bold">{item.name}</td>
+                      <td className="center">{fmt(item.qty)}</td>
+                      <td className="center">{item.unit}</td>
+                      <td className="right">{fmt(item.rate)}</td>
+                      <td className="right bold">{fmt(item.qty * item.rate)}</td>
+                    </tr>
+                  ))}
+                  {/* One stretch row that grows to fill all remaining vertical space */}
+                  <tr className="stretch-row">
+                    <td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            {/* Non-last page: "Continued on next page" */}
+            {!isLastPage && (
+              <div className="continued-label">Continued on next page…</div>
+            )}
+
+            {/* Last page only: Totals + Remarks + Signatures + Date */}
+            {isLastPage && (
+              <>
+                {/* Totals */}
+                <table className="totals-table">
+                  <tbody>
+                    <tr>
+                      <td className="inwords-cell">
+                        <strong>In Words : </strong>{numberToWords(total)}
+                      </td>
+                      <td className="totals-cell">
+                        {totalRows.map(([lbl, val, bold]) => (
+                          <div key={lbl} className={`total-row${bold ? " grand" : ""}`}>
+                            <span>{lbl}</span>
+                            <span className="t-val">
+                              <span>:</span>
+                              <span className="t-num">{val}</span>
+                            </span>
+                          </div>
+                        ))}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                {/* Remarks */}
+                <div className="remarks">
+                  <strong>Remarks :</strong> {notes}
+                </div>
+
+                {/* Signatures */}
+                <div className="sig-grid">
+                  {[
+                    { name: "",      role: "Received By" },
+                    { name: "admin", role: "Prepared" },
+                    { name: "admin", role: "Printed By" },
+                    { name: "",      role: "Authorize By." },
+                  ].map(({ name, role }) => (
+                    <div key={role} className="sig-col">
+                      <div className="sig-name">{name}</div>
+                      <div className="sig-line" />
+                      <div className="sig-role">{role}</div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Printed date */}
+                <div className="print-date">Printed Date &amp; Time : {nowStr()}</div>
+              </>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+
+  /* ── A4 scale for sidebar preview ── */
+  const PREVIEW_W = 450;
+  const A4_PX     = 210 * (96 / 25.4); // ~794px
+  const SCALE     = PREVIEW_W / A4_PX;
 
   /* ══ RENDER ══ */
   return (
     <>
-      {/* Inject shared CSS into the page for live preview rendering */}
       <style>{PRINT_STYLES}</style>
 
       <div style={s.page}>
@@ -664,7 +739,7 @@ export default function AdminInvoice() {
                         <div key={p.id} style={s.dropItem} onClick={() => addProduct(p)}>
                           <div style={{ display:"flex", alignItems:"center", gap:10 }}>
                             {p.image
-                              ? <img src={p.image} alt={p.name} style={s.dropImg} onError={e => e.target.style.display = "none"} />
+                              ? <img src={p.image} alt={p.name} style={s.dropImg} onError={e => e.target.style.display="none"} />
                               : <div style={s.dropImgPlaceholder}>⚙️</div>
                             }
                             <div>
@@ -735,6 +810,14 @@ export default function AdminInvoice() {
 
               {items.length === 0 && <div style={s.emptyItems}>Search above to add products</div>}
 
+              {/* Item count badge */}
+              {items.length > 0 && (
+                <div style={s.itemBadge}>
+                  {items.length} item{items.length !== 1 ? "s" : ""} —
+                  will print on <strong>{Math.ceil(items.length / ITEMS_PER_PAGE)} page{Math.ceil(items.length / ITEMS_PER_PAGE) > 1 ? "s" : ""}</strong>
+                </div>
+              )}
+
               <button style={{ ...s.btn, ...s.btnGhost, marginTop:10 }}
                 onClick={() => setItems(p => [...p, { id:Date.now()+Math.random(), productId:null, hsCode:"", name:"Custom Item", unit:"NOS", qty:1, rate:0 }])}>
                 + Add Custom Line
@@ -762,17 +845,25 @@ export default function AdminInvoice() {
 
           {/* ════ RIGHT: LIVE PREVIEW ════ */}
           <div style={s.previewCol}>
-            <div style={s.previewLabel}>LIVE PREVIEW</div>
+            <div style={s.previewLabel}>
+              LIVE PREVIEW
+              {totalPages > 1 && (
+                <span style={{ marginLeft:8, color:"#f59e0b", fontWeight:700 }}>
+                  {totalPages} PAGES
+                </span>
+              )}
+            </div>
 
-            {/* Scale-down wrapper so A4 fits the sidebar */}
+            {/* Scrollable preview showing all pages stacked */}
             <div style={s.previewScroll}>
-              <div style={s.previewScale}>
+              <div style={{ transformOrigin:"top left", transform:`scale(${SCALE})`, width: A4_PX }}>
                 {InvoiceDoc}
               </div>
             </div>
 
             <button style={{ ...s.btn, ...s.btnPrint, width:"100%", marginTop:12 }} onClick={handlePrint}>
               🖨 Print / Save as PDF
+              {totalPages > 1 && ` (${totalPages} pages)`}
             </button>
             <button style={{ ...s.btn, ...s.btnSave, width:"100%", marginTop:8 }} onClick={handleSave} disabled={saving}>
               {saving ? "Saving…" : "💾 Save to Firebase"}
@@ -794,10 +885,9 @@ function Card({ title, children }) {
   );
 }
 
-const PREVIEW_WIDTH = 440; // px sidebar width
-const A4_MM = 210;
-const A4_PX = A4_MM * (96 / 25.4); // ≈ 794px
-const SCALE = PREVIEW_WIDTH / A4_PX;
+const PREVIEW_W = 450;
+const A4_PX     = 210 * (96 / 25.4);
+const SCALE     = PREVIEW_W / A4_PX;
 
 const s = {
   page:        { fontFamily:"'Segoe UI',sans-serif", background:"#f1f5f9", minHeight:"100vh", padding:"24px 16px" },
@@ -807,7 +897,7 @@ const s = {
   pageSub:     { fontSize:12, color:"#64748b", margin:"2px 0 0" },
   topActions:  { display:"flex", gap:10, flexWrap:"wrap", alignItems:"center" },
   docSel:      { padding:"9px 12px", borderRadius:8, border:"1.5px solid #e2e8f0", fontSize:13, fontWeight:600, background:"#fff", color:"#0f172a", cursor:"pointer" },
-  layout:      { display:"grid", gridTemplateColumns:"1fr 460px", gap:20, alignItems:"start", maxWidth:1340, margin:"0 auto" },
+  layout:      { display:"grid", gridTemplateColumns:"1fr 470px", gap:20, alignItems:"start", maxWidth:1360, margin:"0 auto" },
   editor:      { display:"flex", flexDirection:"column", gap:14 },
   fGrid:       { display:"grid", gridTemplateColumns:"1fr 1fr", gap:"0 14px" },
   lbl:         { display:"block", fontSize:12, fontWeight:600, color:"#374151", marginBottom:5 },
@@ -836,6 +926,7 @@ const s = {
   stepBtn:     { width:22, height:22, borderRadius:4, border:"1px solid #bae6fd", background:"#e0f2fe", cursor:"pointer", fontSize:13, fontWeight:700, color:"#0369a1" },
   remBtn:      { background:"#fee2e2", color:"#dc2626", border:"none", borderRadius:4, width:22, height:22, cursor:"pointer", fontSize:11, fontWeight:700 },
   emptyItems:  { textAlign:"center", padding:"18px 0", color:"#94a3b8", fontSize:13, border:"2px dashed #bae6fd", borderRadius:8, marginTop:8 },
+  itemBadge:   { fontSize:12, color:"#64748b", marginTop:8, padding:"6px 10px", background:"#f0f9ff", borderRadius:6, border:"1px solid #bae6fd" },
   btn:         { padding:"9px 16px", borderRadius:8, border:"none", fontSize:13, fontWeight:700, cursor:"pointer" },
   btnPrimary:  { background:"#0ea5e9", color:"#fff" },
   btnGhost:    { background:"#f1f5f9", color:"#475569" },
@@ -844,17 +935,12 @@ const s = {
   previewCol:  { position:"sticky", top:20 },
   previewLabel:{ fontSize:10, fontWeight:700, letterSpacing:1.5, color:"#94a3b8", textTransform:"uppercase", marginBottom:6 },
   previewScroll: {
-    width: PREVIEW_WIDTH,
+    width: PREVIEW_W,
     height: Math.round(A4_PX * (297/210) * SCALE) + 4,
     overflow: "hidden",
     border: "1px solid #e2e8f0",
     borderRadius: 8,
-    background: "#fff",
+    background: "#f8fafc",
     boxShadow: "0 4px 20px rgba(0,0,0,0.10)",
-  },
-  previewScale: {
-    transformOrigin: "top left",
-    transform: `scale(${SCALE})`,
-    width: A4_PX,
   },
 };
