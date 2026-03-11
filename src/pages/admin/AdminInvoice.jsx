@@ -153,7 +153,6 @@ export default function AdminInvoice() {
     /* ── Validate required fields ── */
     const missing = [];
     if (!client.name.trim())    missing.push("Client Name");
-    if (!client.company.trim()) missing.push("Company");
     if (!client.address.trim()) missing.push("Address");
     if (!invoiceDate)           missing.push("Date");
     if (!docType)               missing.push("Type");
@@ -210,7 +209,8 @@ export default function AdminInvoice() {
          const newQty = Math.max(0, (product.quantity || 0) - item.qty);
         await updateDoc(doc(db, "products", product.id), { quantity: newQty });
       }
-    }
+  }
+
 
       navigate("/admin/invoices");
     } finally {
@@ -393,7 +393,7 @@ export default function AdminInvoice() {
           {/* Client */}
           <Card title="Bill To (Client)">
             <div className="invoice-fgrid" style={s.fGrid}>
-              {[["name","Client Name",true],["company","Company",true],["phone","Phone"],["email","Email"],["address","Address",true],["gstin","VAT/PAN"]].map(([k,lbl,req])=>(
+              {[["name","Client Name",true],["phone","Phone"],["email","Email"],["address","Address",true],["gstin","VAT/PAN"]].map(([k,lbl,req])=>(
                 <div key={k} style={k==="address"?{gridColumn:"1/-1"}:{}}>
                   <label style={s.lbl}>{lbl}{req&&<span style={{color:"#ef4444"}}> *</span>}</label>
                   {k==="payment"
@@ -574,6 +574,7 @@ export default function AdminInvoice() {
               </div>
               <div style={{padding:"6px 8px"}}>
                 <div><b>Invoice No :</b> {invoiceNo}</div>
+                {client.name && <div style={s.docSmall}><b>Bill To:</b> {client.name}</div>}
                 <div><b>Date &amp; Time :</b> {invoiceDate}</div>
                 <div><b>Miti :</b> {dueDate||"—"}</div>
                 <div><b>Order No &amp; Dt :</b></div>
