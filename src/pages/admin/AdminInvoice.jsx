@@ -1,7 +1,10 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+
 import { useProducts } from "../../hooks/useProducts";
 import { useInvoices } from "../../hooks/useInvoices";
+import { useCustomers } from "../../hooks/useCustomers";
+
 import { doc, updateDoc } from "firebase/firestore";
 import { db } from "../../firebase/config";
 
@@ -256,8 +259,8 @@ export default function AdminInvoice() {
 
   const { products }                             = useProducts();
   const { invoices, saveInvoice, updateInvoice } = useInvoices();
-
-  const today = () => new Date().toISOString().slice(0, 10);
+const { customers, upsertFromInvoice } = useCustomers();  
+const today = () => new Date().toISOString().slice(0, 10);
 
   const DEFAULT_COMPANY = {
     name: "Manakamana Heavy Equipments Pvt. Ltd.",
@@ -285,6 +288,8 @@ export default function AdminInvoice() {
   const [search,      setSearch]      = useState("");
   const [showDrop,    setShowDrop]    = useState(false);
   const [saving,      setSaving]      = useState(false);
+  const [clientSearch, setClientSearch] = useState("");
+const [showClientDrop, setShowClientDrop] = useState(false);
 
   // useEffect(() => {
   //   if (id && id !== "new") {
@@ -369,62 +374,97 @@ export default function AdminInvoice() {
     ));
 
   /* ── Save ── */
-  const handleSave = async () => {
-    const missing = [];
-    if (!client.name.trim())    missing.push("Client Name");
-    if (!client.address.trim()) missing.push("Address");
-    if (!invoiceDate)           missing.push("Date");
-    if (!docType)               missing.push("Type");
-    if (items.length === 0)     missing.push("At least one product/service");
-    if (missing.length > 0) {
-      alert(`Please fill all required fields before saving:\n\n• ${missing.join('\n• ')}`);
-      return;
-    }
+ const handleSave = async () => {
+  const missing = [];
+  if (!client.name.trim())    missing.push("Client Name");
+  if (!client.address.trim()) missing.push("Address");
+  if (!invoiceDate)           missing.push("Date");
+  if (!docType)               missing.push("Type");
+  if (items.length === 0)     missing.push("At least one product/service");
 
-    // Prevent duplicate invoice number
-    const duplicate = invoices.find(inv => inv.invoiceNo === invoiceNo && (!id || inv.id !== id));
-    if (duplicate) {
-      alert(`Invoice number '${invoiceNo}' already exists. Please use a unique invoice number.`);
-      return;
-    }
+  if (missing.length > 0) {
+    alert(`Please fill all required fields before saving:\n\n• ${missing.join('\n• ')}`);
+    return;
+  }
 
-    const stockErrors = [];
-    for (const item of items) {
-      if (!item.productId) continue;
-      const prod = products.find(p => p.id === item.productId);
-      if (!prod) continue;
-      const stock = prod.quantity !== undefined ? Number(prod.quantity) : 0;
-      if (stock <= 0)         stockErrors.push(`❌ ${prod.name} — out of stock (0 units)`);
-      else if (item.qty > stock) stockErrors.push(`⚠️ ${prod.name} — only ${stock} in stock, but ${item.qty} requested`);
+  const duplicate = invoices.find(
+    inv => inv.invoiceNo === invoiceNo && (!id || inv.id !== id)
+  );
+
+  if (duplicate) {
+    alert(`Invoice number '${invoiceNo}' already exists.`);
+    return;
+  }
+
+  const stockErrors = [];
+
+  for (const item of items) {
+    if (!item.productId) continue;
+
+    const prod = products.find(p => p.id === item.productId);
+    if (!prod) continue;
+
+    const stock = prod.quantity !== undefined ? Number(prod.quantity) : 0;
+
+    if (stock <= 0)
+      stockErrors.push(`❌ ${prod.name} — out of stock`);
+
+    else if (item.qty > stock)
+      stockErrors.push(`⚠️ ${prod.name} — only ${stock} available`);
+  }
+
+  if (stockErrors.length > 0) {
+    alert(`Stock issues:\n\n${stockErrors.join('\n')}`);
+    return;
+  }
+
+  for (const item of items) {
+    if (!item.productId) continue;
+
+    const product = products.find(p => p.id === item.productId);
+
+    if (product) {
+      const newQty = Math.max(0, (product.quantity || 0) - item.qty);
+
+      await updateDoc(doc(db, "products", product.id), {
+        quantity: newQty
+      });
     }
-    if (stockErrors.length > 0) {
-      alert(`Cannot save invoice — stock issues:\n\n${stockErrors.join('\n')}\n\nPlease adjust quantities or restock.`);
-      return;
-    }
-    for (const item of items) {
-      if (!item.productId) continue;
-      const product = products.find(p => p.id === item.productId);
-      if (product) {
-        const newQty = Math.max(0, (product.quantity || 0) - item.qty);
-        await updateDoc(doc(db, "products", product.id), { quantity: newQty });
-      }
-    }
-    setSaving(true);
-    const data = {
-      invoiceNo, invoiceDate, dueDate, docType,
-      company, client, items,
-      taxEnabled, discountPct, notes, terms,
-      subtotal, discount, tax, total,
-      clientName: client.name,
-    };
-    try {
-      if (id && id !== "new") await updateInvoice(id, data);
-      else await saveInvoice(data);
-      navigate("/admin/invoices");
-    } finally {
-      setSaving(false);
-    }
+  }
+
+  setSaving(true);
+
+  const data = {
+    invoiceNo,
+    invoiceDate,
+    dueDate,
+    docType,
+    company,
+    client,
+    items,
+    taxEnabled,
+    discountPct,
+    notes,
+    terms,
+    subtotal,
+    discount,
+    tax,
+    total,
+    clientName: client.name
   };
+
+  try {
+    if (id && id !== "new") await updateInvoice(id, data);
+    else await saveInvoice(data);
+
+    // ⭐ THIS IS THE NEW LINE
+    await upsertFromInvoice(client);
+
+    navigate("/admin/invoices");
+  } finally {
+    setSaving(false);
+  }
+};
 
   /* ── Print ── */
   const handlePrint = () => {
@@ -717,21 +757,161 @@ export default function AdminInvoice() {
               )}
             </Card>
 
-            <Card title="Bill To (Client)">
-              <div style={s.fGrid}>
-                {[["name","Client Name",true],["phone","Contact No."],["address","Address",true],["gstin","VAT/PAN No."],["payment","Payment"]].map(([k, lbl, req]) => (
-                  <div key={k} style={k === "address" ? { gridColumn:"1/-1" } : {}}>
-                    <label style={s.lbl}>{lbl}{req && <span style={{ color:"#ef4444" }}> *</span>}</label>
-                    {k === "payment"
-                      ? <select style={s.inp} value={client[k] || "Cash/Credit"} onChange={e => setClient(p => ({ ...p, [k]: e.target.value }))}>
-                          {["Cash/Credit","Cash","Credit","Cheque","Online Transfer"].map(o => <option key={o}>{o}</option>)}
-                        </select>
-                      : <input style={s.inp} placeholder={lbl} value={client[k] || ""} onChange={e => setClient(p => ({ ...p, [k]: e.target.value }))} />
-                    }
-                  </div>
-                ))}
-              </div>
-            </Card>
+          <Card title="Bill To (Client)">
+
+<label style={s.lbl}>
+Client Name <span style={{color:"#ef4444"}}>*</span>
+</label>
+
+<div style={{position:"relative",marginBottom:12}}>
+
+<input
+style={{...s.inp,marginBottom:0}}
+placeholder="Type name to search or add new…"
+value={client.name}
+onChange={(e)=>{
+const val = e.target.value;
+setClient(p=>({...p,name:val}));
+setClientSearch(val);
+setShowClientDrop(true);
+}}
+onFocus={()=>{
+setClientSearch(client.name);
+setShowClientDrop(true);
+}}
+onBlur={()=>setTimeout(()=>setShowClientDrop(false),180)}
+/>
+
+{showClientDrop && (
+<div style={s.drop} onMouseDown={(e)=>e.preventDefault()}>
+
+{customers
+.filter(c =>
+!clientSearch.trim() ||
+c.name.toLowerCase().includes(clientSearch.toLowerCase()) ||
+(c.company||"").toLowerCase().includes(clientSearch.toLowerCase())
+)
+.slice(0,8)
+.map(c=>(
+<div
+key={c.id}
+style={s.dropItem}
+onClick={()=>{
+
+setClient({
+name:c.name,
+company:c.company||"",
+phone:c.phone||"",
+address:c.address||"",
+gstin:c.gstin||"",
+payment:client.payment||"Cash/Credit"
+});
+
+setShowClientDrop(false);
+}}
+>
+
+<div>
+<div style={s.dropName}>{c.name}</div>
+
+{c.company && (
+<div style={s.dropMeta}>{c.company}</div>
+)}
+
+{c.phone && (
+<div style={s.dropMeta}>📞 {c.phone}</div>
+)}
+
+</div>
+
+{c.gstin && (
+<span style={{
+fontSize:10,
+color:"#a16207",
+background:"#fefce8",
+padding:"2px 6px",
+borderRadius:4,
+fontFamily:"monospace"
+}}>
+{c.gstin}
+</span>
+)}
+
+</div>
+))
+}
+
+{clientSearch.trim() &&
+!customers.find(c=>c.name.toLowerCase()===clientSearch.toLowerCase()) && (
+
+<div
+style={{
+padding:"9px 12px",
+cursor:"pointer",
+fontSize:13,
+fontWeight:600,
+color:"#0369a1",
+borderTop:"1px solid #f1f5f9",
+background:"#f0f9ff"
+}}
+onClick={()=>{
+setClient(p=>({...p,name:clientSearch.trim()}));
+setShowClientDrop(false);
+}}
+>
+
+➕ Use "<strong>{clientSearch.trim()}</strong>" as new customer
+
+</div>
+
+)}
+
+</div>
+)}
+
+</div>
+
+<div style={s.fGrid}>
+
+{[
+["company","Company / Firm"],
+["phone","Contact No."],
+["address","Address"],
+["gstin","VAT/PAN No"],
+["payment","Payment Method"]
+].map(([k,lbl])=>(
+
+<div key={k} style={k==="address"?{gridColumn:"1/-1"}:{}}>
+
+<label style={s.lbl}>{lbl}</label>
+
+{k==="payment"
+?
+<select
+style={s.inp}
+value={client[k]||"Cash/Credit"}
+onChange={(e)=>setClient(p=>({...p,[k]:e.target.value}))}
+>
+{["Cash/Credit","Cash","Credit","Cheque","Online Transfer"].map(o=>(
+<option key={o}>{o}</option>
+))}
+</select>
+:
+<input
+style={s.inp}
+placeholder={lbl}
+value={client[k]||""}
+onChange={(e)=>setClient(p=>({...p,[k]:e.target.value}))}
+/>
+}
+
+</div>
+
+))}
+
+</div>
+
+</Card>
 
             <Card title="Document Details">
               <div style={s.fGrid}>
