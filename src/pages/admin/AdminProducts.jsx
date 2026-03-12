@@ -1,8 +1,8 @@
 import { useState, useRef } from "react";
 import { useProducts } from "../../hooks/useProducts";
 import { useCategories } from "../../hooks/useCategories";
-import { useRacks } from "../../hooks/useRacks"; // ← NEW hook (see useRacks.js)
-import { RackSelector } from "./RackSelector";   // ← NEW component
+import { useRacks } from "../../hooks/useRacks"; 
+import { RackSelector } from "./RackSelector";   
 
 const EMPTY = {
   name: "", price: "", costPrice: "", unit: "Nos",

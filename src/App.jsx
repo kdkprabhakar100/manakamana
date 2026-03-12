@@ -1,5 +1,11 @@
 import React, { Suspense, lazy } from "react";
-import { BrowserRouter as Router, Routes, Route, Link, useLocation } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Link,
+  useLocation,
+} from "react-router-dom";
 import { AuthProvider } from "./hooks/useAuth";
 import { ContactsProvider } from "./hooks/useContacts";
 import { AdminRoute, PublicRoute } from "./components/common/RouteGuards";
@@ -9,6 +15,7 @@ import BackToTop from "./components/common/BackToTop";
 import Navbar from "./components/layout/Navbar";
 import Footer from "./components/layout/Footer";
 import AdminLayout from "./components/layout/AdminLayout";
+// import AdminCustomers from "./pages/admin/AdminCustomers";
 
 // ✅ Lazy-loaded pages (code splitting)
 const HomePage = lazy(() => import("./pages/public/HomePage"));
@@ -26,12 +33,15 @@ const AdminInventory = lazy(() => import("./pages/admin/AdminInventory"));
 const AdminInvoice = lazy(() => import("./pages/admin/AdminInvoice"));
 const AdminInvoices = lazy(() => import("./pages/admin/AdminInvoices"));
 const AdminMessages = lazy(() => import("./pages/admin/AdminMessages"));
+const AdminCustomers = lazy(() => import("./pages/admin/AdminCustomers"));
 
 function Layout({ children, hideFooter }) {
   const location = useLocation();
   const isHome = location.pathname === "/";
   return (
-    <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
+    <div
+      style={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}
+    >
       <Navbar />
       <main style={{ flex: 1, paddingTop: isHome ? 0 : 75 }}>{children}</main>
       {!hideFooter && <Footer />}
@@ -51,12 +61,25 @@ function PageLoader() {
       }}
     >
       <div style={{ textAlign: "center" }}>
-        <div style={{
-          width: 40, height: 40, border: "3px solid #f5f5f5",
-          borderTop: "3px solid #d97706", borderRadius: "50%",
-          animation: "spin 0.8s linear infinite", margin: "0 auto 16px"
-        }} />
-        <div style={{ color: "#737373", fontWeight: 500, fontSize: 14, letterSpacing: 0.5 }}>
+        <div
+          style={{
+            width: 40,
+            height: 40,
+            border: "3px solid #f5f5f5",
+            borderTop: "3px solid #d97706",
+            borderRadius: "50%",
+            animation: "spin 0.8s linear infinite",
+            margin: "0 auto 16px",
+          }}
+        />
+        <div
+          style={{
+            color: "#737373",
+            fontWeight: 500,
+            fontSize: 14,
+            letterSpacing: 0.5,
+          }}
+        >
           Loading…
         </div>
       </div>
@@ -69,17 +92,53 @@ export default function App() {
     <AuthProvider>
       <ContactsProvider>
         <ToastProvider>
-          <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+          <Router
+            future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+          >
             <ScrollToTop />
             <BackToTop />
             {/* ✅ Suspense wraps routes so lazy-loaded pages can load */}
-            <Suspense fallback={<Layout><PageLoader /></Layout>}>
+            <Suspense
+              fallback={
+                <Layout>
+                  <PageLoader />
+                </Layout>
+              }
+            >
               <Routes>
                 {/* ── Public pages ── */}
-                <Route path="/" element={<Layout><HomePage /></Layout>} />
-                <Route path="/products" element={<Layout><ProductsPage /></Layout>} />
-                <Route path="/about" element={<Layout><AboutPage /></Layout>} />
-                <Route path="/contact" element={<Layout><ContactPage /></Layout>} />
+                <Route
+                  path="/"
+                  element={
+                    <Layout>
+                      <HomePage />
+                    </Layout>
+                  }
+                />
+                <Route
+                  path="/products"
+                  element={
+                    <Layout>
+                      <ProductsPage />
+                    </Layout>
+                  }
+                />
+                <Route
+                  path="/about"
+                  element={
+                    <Layout>
+                      <AboutPage />
+                    </Layout>
+                  }
+                />
+                <Route
+                  path="/contact"
+                  element={
+                    <Layout>
+                      <ContactPage />
+                    </Layout>
+                  }
+                />
 
                 {/* ── Auth ── */}
                 <Route
@@ -110,6 +169,16 @@ export default function App() {
                     <AdminRoute>
                       <AdminLayout>
                         <AdminProducts />
+                      </AdminLayout>
+                    </AdminRoute>
+                  }
+                />
+                <Route
+                  path="/admin/customers"
+                  element={
+                    <AdminRoute>
+                      <AdminLayout>
+                        <AdminCustomers />
                       </AdminLayout>
                     </AdminRoute>
                   }
@@ -168,7 +237,13 @@ export default function App() {
                         }}
                       >
                         <div style={{ fontSize: 64 }}>🔩</div>
-                        <h1 style={{ fontSize: 32, color: "#0f172a", margin: "16px 0 8px" }}>
+                        <h1
+                          style={{
+                            fontSize: 32,
+                            color: "#0f172a",
+                            margin: "16px 0 8px",
+                          }}
+                        >
                           Page Not Found
                         </h1>
                         <p style={{ color: "#64748b", marginBottom: 24 }}>

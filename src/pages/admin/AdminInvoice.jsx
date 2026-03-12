@@ -34,10 +34,26 @@ function numberToWords(n) {
 function fmt(n) {
   return Number(n).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
+//old invoce style
+// let _counter = 1001;
+// function newInvoiceNo() {
+//   return `SB-${String(_counter++).padStart(5, "0")}`;
+// }
 
-let _counter = 1001;
-function newInvoiceNo() {
-  return `SB-${String(_counter++).padStart(5, "0")}`;
+//new invoice style
+const INV_KEY = "manakaman_inv_counter";
+function generateInvoiceNo(invoices) {
+  if (!invoices || invoices.length === 0) return "SB-00001";
+
+  const numbers = invoices.map(inv => {
+    const num = parseInt((inv.invoiceNo || "").replace("SB-", ""));
+    return isNaN(num) ? 0 : num;
+  });
+
+  const max = Math.max(...numbers);
+  const next = max + 1;
+
+  return `SB-${String(next).padStart(5, "0")}`;
 }
 
 /* ─────────────────────────────────────────────
@@ -254,7 +270,7 @@ export default function AdminInvoice() {
   };
   const EMPTY_CLIENT = { name: "", address: "", phone: "", gstin: "", payment: "Cash/Credit" };
 
-  const [invoiceNo,   setInvoiceNo]   = useState(newInvoiceNo);
+  const [invoiceNo,   setInvoiceNo]   = useState("");
   const [invoiceDate, setInvoiceDate] = useState(today());
   const [dueDate,     setDueDate]     = useState("");
   const [docType,     setDocType]     = useState("Invoice");
@@ -270,25 +286,31 @@ export default function AdminInvoice() {
   const [showDrop,    setShowDrop]    = useState(false);
   const [saving,      setSaving]      = useState(false);
 
+  // useEffect(() => {
+  //   if (id && id !== "new") {
+  //     const existing = invoices.find(i => i.id === id);
+  //     if (existing) {
+  //       setInvoiceNo(existing.invoiceNo || newInvoiceNo());
+  //       setInvoiceDate(existing.invoiceDate || today());
+  //       setDueDate(existing.dueDate || "");
+  //       setDocType(existing.docType || "Invoice");
+  //       setClient(existing.client || EMPTY_CLIENT);
+  //       setItems(existing.items || []);
+  //       setDiscountPct(existing.discountPct || 0);
+  //       setTaxEnabled(existing.taxEnabled ?? true);
+  //       setNotes(existing.notes || "");
+  //       setTerms(existing.terms || "");
+  //       setCompany(existing.company || DEFAULT_COMPANY);
+  //     }
+  //   }
+  // // eslint-disable-next-line react-hooks/exhaustive-deps
+  // }, [id, invoices]);
+
   useEffect(() => {
-    if (id && id !== "new") {
-      const existing = invoices.find(i => i.id === id);
-      if (existing) {
-        setInvoiceNo(existing.invoiceNo || newInvoiceNo());
-        setInvoiceDate(existing.invoiceDate || today());
-        setDueDate(existing.dueDate || "");
-        setDocType(existing.docType || "Invoice");
-        setClient(existing.client || EMPTY_CLIENT);
-        setItems(existing.items || []);
-        setDiscountPct(existing.discountPct || 0);
-        setTaxEnabled(existing.taxEnabled ?? true);
-        setNotes(existing.notes || "");
-        setTerms(existing.terms || "");
-        setCompany(existing.company || DEFAULT_COMPANY);
-      }
+    if (!id || id =="new"){
+      setInvoiceNo(generateInvoiceNo(invoices));
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, invoices]);
+  }, [invoices, id]);
 
   /* ── Calculations ── */
   const subtotal = items.reduce((s, i) => s + i.qty * i.rate, 0);
@@ -358,6 +380,14 @@ export default function AdminInvoice() {
       alert(`Please fill all required fields before saving:\n\n• ${missing.join('\n• ')}`);
       return;
     }
+
+    // Prevent duplicate invoice number
+    const duplicate = invoices.find(inv => inv.invoiceNo === invoiceNo && (!id || inv.id !== id));
+    if (duplicate) {
+      alert(`Invoice number '${invoiceNo}' already exists. Please use a unique invoice number.`);
+      return;
+    }
+
     const stockErrors = [];
     for (const item of items) {
       if (!item.productId) continue;
@@ -420,7 +450,12 @@ export default function AdminInvoice() {
     clone.removeAttribute("style");
     w.document.getElementById("print-root").appendChild(clone);
     w.focus();
-    setTimeout(() => { w.print(); w.close(); }, 900);
+    // Use onafterprint to close the window after printing, to avoid blocking the main window
+    w.onafterprint = function() {
+      w.close();
+    };
+    // Some browsers require a delay before calling print
+    setTimeout(() => { w.print(); }, 400);
   };
 
   const nowStr = () => {
@@ -464,6 +499,7 @@ export default function AdminInvoice() {
               <tbody>
                 {[
                   ["Customer",    client.name || "—",                    true],
+                  ["Address",     client.address || "—",                 false],
                   ["Contact No.", client.phone || "—",                   false],
                   ["VAT/PAN No.", client.gstin || "—",                   false],
                   ["Payment",     client.payment || "Cash/Credit",       false],
@@ -866,7 +902,7 @@ export default function AdminInvoice() {
               {totalPages > 1 && ` (${totalPages} pages)`}
             </button>
             <button style={{ ...s.btn, ...s.btnSave, width:"100%", marginTop:8 }} onClick={handleSave} disabled={saving}>
-              {saving ? "Saving…" : "💾 Save to Firebase"}
+              {saving ? "Saving…" : "💾 Save"}
             </button>
           </div>
 

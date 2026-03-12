@@ -1,0 +1,365 @@
+import { useState, useRef } from "react";
+import { useCustomers } from "../../hooks/useCustomers";
+import { useInvoices } from "../../hooks/useInvoices";
+
+const EMPTY = { name:"", company:"", phone:"", address:"", gstin:"", email:"", notes:"" };
+
+export default function AdminCustomers() {
+  const { customers, loading, useLocal, addCustomer, updateCustomer, deleteCustomer } = useCustomers();
+  const { invoices } = useInvoices();
+
+  const [showModal,  setShowModal]  = useState(false);
+  const [editing,    setEditing]    = useState(null);
+  const [form,       setForm]       = useState(EMPTY);
+  const [search,     setSearch]     = useState("");
+  const [delConfirm, setDelConfirm] = useState(null);
+  const [saving,     setSaving]     = useState(false);
+  const [viewCustomer, setViewCustomer] = useState(null);
+
+  const filtered = customers.filter(c =>
+    c.name.toLowerCase().includes(search.toLowerCase()) ||
+    (c.company||"").toLowerCase().includes(search.toLowerCase()) ||
+    (c.phone||"").includes(search) ||
+    (c.gstin||"").toLowerCase().includes(search.toLowerCase())
+  );
+
+  const openAdd = () => {
+    setEditing(null);
+    setForm(EMPTY);
+    setShowModal(true);
+  };
+
+  const openEdit = (c) => {
+    setEditing(c);
+    setForm({ name:c.name, company:c.company||"", phone:c.phone||"", address:c.address||"", gstin:c.gstin||"", email:c.email||"", notes:c.notes||"" });
+    setShowModal(true);
+  };
+
+  const handleSave = async () => {
+    if (!form.name.trim()) { alert("Customer name is required."); return; }
+    setSaving(true);
+    try {
+      if (editing) await updateCustomer(editing.id, form);
+      else         await addCustomer(form);
+      setShowModal(false);
+    } catch (err) {
+      alert("Failed to save: " + err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Get invoices for a specific customer
+  const getCustomerInvoices = (customerName) =>
+    invoices.filter(inv =>
+      (inv.clientName || inv.client?.name || "").toLowerCase() === customerName.toLowerCase()
+    ).sort((a,b) => (b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
+
+  const getCustomerTotal = (customerName) =>
+    getCustomerInvoices(customerName).reduce((s,inv) => s + (inv.total||0), 0);
+
+  const fmt = (n) => Number(n).toLocaleString("en-IN", { minimumFractionDigits:2, maximumFractionDigits:2 });
+  const fmtDate = (inv) => {
+    if (inv.invoiceDate) return inv.invoiceDate;
+    if (inv.createdAt?.seconds) return new Date(inv.createdAt.seconds*1000).toLocaleDateString("en-IN");
+    return "—";
+  };
+
+  return (
+    <div style={s.page}>
+      <div style={s.inner}>
+
+        {/* Header */}
+        <div style={s.header}>
+          <div>
+            <p style={s.labelTag}>ADMIN · CUSTOMERS</p>
+            <h1 style={s.title}>Customer Directory</h1>
+          </div>
+          <div style={s.headerRight}>
+            <input style={s.search} placeholder="🔍 Search name, company, phone…"
+              value={search} onChange={e=>setSearch(e.target.value)} />
+            <button style={s.addBtn} onClick={openAdd}>+ Add Customer</button>
+          </div>
+        </div>
+
+        {/* Banner */}
+        <div style={{...s.banner,...(useLocal?s.bannerLocal:s.bannerFire)}}>
+          {useLocal
+            ? "⚠️ Firebase not configured — customers saved in browser localStorage."
+            : `✅ Firebase connected — ${customers.length} customer${customers.length!==1?"s":""} in directory.`}
+        </div>
+
+        {/* Stats row */}
+        <div style={s.statsRow}>
+          {[
+            ["👥", customers.length, "Total Customers"],
+            ["🧾", invoices.length, "Total Invoices"],
+            ["💰", "Rs "+fmt(invoices.reduce((s,i)=>s+(i.total||0),0)), "Total Revenue"],
+          ].map(([icon, val, label]) => (
+            <div key={label} style={s.statCard}>
+              <div style={s.statIcon}>{icon}</div>
+              <div style={s.statVal}>{val}</div>
+              <div style={s.statLabel}>{label}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Table */}
+        {loading ? (
+          <div style={s.loading}><div style={s.spinner}/><p>Loading customers…</p></div>
+        ) : filtered.length === 0 ? (
+          <div style={s.empty}>
+            <div style={{fontSize:52}}>👤</div>
+            <p style={{color:"#64748b",marginTop:10}}>
+              {search ? `No customers match "${search}"` : "No customers yet. Add one or save an invoice to auto-create."}
+            </p>
+            {!search && <button style={{...s.addBtn,marginTop:14}} onClick={openAdd}>+ Add First Customer</button>}
+          </div>
+        ) : (
+          <div style={s.tableWrap}>
+            <table style={s.table}>
+              <thead>
+                <tr style={s.thead}>
+                  <th style={s.th}>#</th>
+                  <th style={s.th}>Customer</th>
+                  <th style={s.th}>Phone</th>
+                  <th style={s.th}>VAT/PAN</th>
+                  <th style={s.th}>Invoices</th>
+                  <th style={{...s.th,textAlign:"right"}}>Total Billed</th>
+                  <th style={s.th}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((c, idx) => {
+                  const invCount = getCustomerInvoices(c.name).length;
+                  const total    = getCustomerTotal(c.name);
+                  return (
+                    <tr key={c.id} style={idx%2===0?s.trEven:s.trOdd}>
+                      <td style={{...s.td,color:"#94a3b8",fontSize:11}}>{idx+1}</td>
+                      <td style={s.td}>
+                        <div style={{fontWeight:700,color:"#0f172a",fontSize:14}}>{c.name}</div>
+                        {c.company && <div style={{fontSize:11,color:"#64748b"}}>{c.company}</div>}
+                        {c.address && <div style={{fontSize:11,color:"#94a3b8"}}>{c.address}</div>}
+                        {c.email   && <div style={{fontSize:11,color:"#0369a1"}}>{c.email}</div>}
+                      </td>
+                      <td style={s.td}>
+                        {c.phone ? <span style={s.phoneBadge}>📞 {c.phone}</span> : <span style={{color:"#cbd5e1"}}>—</span>}
+                      </td>
+                      <td style={s.td}>
+                        {c.gstin ? <span style={s.gstBadge}>{c.gstin}</span> : <span style={{color:"#cbd5e1"}}>—</span>}
+                      </td>
+                      <td style={{...s.td,textAlign:"center"}}>
+                        {invCount > 0
+                          ? <span style={s.invBadge} onClick={()=>setViewCustomer(c)} title="View invoices">{invCount} invoice{invCount!==1?"s":""}</span>
+                          : <span style={{color:"#cbd5e1",fontSize:12}}>None</span>
+                        }
+                      </td>
+                      <td style={{...s.td,textAlign:"right",fontWeight:700,color:total>0?"#0369a1":"#94a3b8"}}>
+                        {total > 0 ? "Rs "+fmt(total) : "—"}
+                      </td>
+                      <td style={s.td}>
+                        <div style={{display:"flex",gap:6}}>
+                          <button style={s.btnEdit} onClick={()=>openEdit(c)}>✏️</button>
+                          <button style={s.btnView} onClick={()=>setViewCustomer(c)}>👁</button>
+                          <button style={s.btnDel}  onClick={()=>setDelConfirm(c.id)}>🗑</button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* ══ Add / Edit Modal ══ */}
+      {showModal && (
+        <div style={s.overlay} onClick={()=>setShowModal(false)}>
+          <div style={s.modal} onClick={e=>e.stopPropagation()}>
+            <h2 style={s.modalTitle}>{editing?"✏️ Edit Customer":"➕ Add Customer"}</h2>
+            <div style={s.fGrid}>
+              <div style={{gridColumn:"1/-1"}}>
+                <label style={s.lbl}>Full Name <span style={{color:"#ef4444"}}>*</span></label>
+                <input style={s.inp} placeholder="e.g. Ram Bahadur Shrestha" value={form.name}
+                  onChange={e=>setForm(f=>({...f,name:e.target.value}))} />
+              </div>
+              <div>
+                <label style={s.lbl}>Company / Firm</label>
+                <input style={s.inp} placeholder="e.g. ABC Traders Pvt. Ltd." value={form.company}
+                  onChange={e=>setForm(f=>({...f,company:e.target.value}))} />
+              </div>
+              <div>
+                <label style={s.lbl}>Phone</label>
+                <input style={s.inp} placeholder="e.g. 9841234567" value={form.phone}
+                  onChange={e=>setForm(f=>({...f,phone:e.target.value}))} />
+              </div>
+              <div>
+                <label style={s.lbl}>Email</label>
+                <input type="email" style={s.inp} placeholder="e.g. ram@example.com" value={form.email}
+                  onChange={e=>setForm(f=>({...f,email:e.target.value}))} />
+              </div>
+              <div>
+                <label style={s.lbl}>VAT / PAN No.</label>
+                <input style={s.inp} placeholder="e.g. 500123456" value={form.gstin}
+                  onChange={e=>setForm(f=>({...f,gstin:e.target.value}))} />
+              </div>
+              <div style={{gridColumn:"1/-1"}}>
+                <label style={s.lbl}>Address</label>
+                <input style={s.inp} placeholder="e.g. Kathmandu, Bagmati Province" value={form.address}
+                  onChange={e=>setForm(f=>({...f,address:e.target.value}))} />
+              </div>
+              <div style={{gridColumn:"1/-1"}}>
+                <label style={s.lbl}>Notes (internal)</label>
+                <textarea style={{...s.inp,height:60,resize:"vertical"}} placeholder="Any internal notes…"
+                  value={form.notes} onChange={e=>setForm(f=>({...f,notes:e.target.value}))} />
+              </div>
+            </div>
+            <div style={{display:"flex",gap:10,marginTop:8}}>
+              <button style={{...s.btn,...s.btnSecondary,flex:1}} onClick={()=>setShowModal(false)}>Cancel</button>
+              <button style={{...s.btn,...s.btnPrimary,flex:1,opacity:saving?.7:1}} onClick={handleSave} disabled={saving}>
+                {saving?"Saving…":editing?"Save Changes":"Add Customer"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ══ Delete Confirm ══ */}
+      {delConfirm && (
+        <div style={s.overlay} onClick={()=>setDelConfirm(null)}>
+          <div style={{...s.modal,maxWidth:360}} onClick={e=>e.stopPropagation()}>
+            <h2 style={{...s.modalTitle,color:"#ef4444"}}>Delete Customer?</h2>
+            <p style={{color:"#64748b",marginBottom:24,fontSize:14}}>This removes them from the directory only. Their invoices are not deleted.</p>
+            <div style={{display:"flex",gap:10}}>
+              <button style={{...s.btn,...s.btnSecondary,flex:1}} onClick={()=>setDelConfirm(null)}>Cancel</button>
+              <button style={{...s.btn,flex:1,background:"#ef4444",color:"#fff"}} onClick={async()=>{await deleteCustomer(delConfirm);setDelConfirm(null);}}>Yes, Delete</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ══ View Customer + Invoice History ══ */}
+      {viewCustomer && (
+        <div style={s.overlay} onClick={()=>setViewCustomer(null)}>
+          <div style={{...s.modal,maxWidth:620}} onClick={e=>e.stopPropagation()}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16}}>
+              <div>
+                <h2 style={{...s.modalTitle,marginBottom:4}}>{viewCustomer.name}</h2>
+                {viewCustomer.company && <p style={{color:"#0369a1",fontWeight:600,fontSize:13,margin:0}}>{viewCustomer.company}</p>}
+              </div>
+              <div style={{display:"flex",gap:8}}>
+                <button style={s.btnEdit} onClick={()=>{setViewCustomer(null);openEdit(viewCustomer);}}>✏️ Edit</button>
+                <button style={{...s.btn,...s.btnSecondary,padding:"6px 12px",fontSize:12}} onClick={()=>setViewCustomer(null)}>✕ Close</button>
+              </div>
+            </div>
+
+            {/* Info grid */}
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:16,background:"#f8fafc",borderRadius:10,padding:14}}>
+              {[
+                ["📞 Phone",   viewCustomer.phone||"—"],
+                ["✉️ Email",   viewCustomer.email||"—"],
+                ["📍 Address", viewCustomer.address||"—"],
+                ["🏷 VAT/PAN", viewCustomer.gstin||"—"],
+              ].map(([lbl,val])=>(
+                <div key={lbl}>
+                  <div style={{fontSize:11,fontWeight:700,color:"#94a3b8",textTransform:"uppercase",letterSpacing:1}}>{lbl}</div>
+                  <div style={{fontSize:13,color:"#0f172a",marginTop:2}}>{val}</div>
+                </div>
+              ))}
+              {viewCustomer.notes && (
+                <div style={{gridColumn:"1/-1"}}>
+                  <div style={{fontSize:11,fontWeight:700,color:"#94a3b8",textTransform:"uppercase",letterSpacing:1}}>📝 Notes</div>
+                  <div style={{fontSize:13,color:"#64748b",marginTop:2}}>{viewCustomer.notes}</div>
+                </div>
+              )}
+            </div>
+
+            {/* Invoice history */}
+            <h3 style={{fontSize:12,fontWeight:700,color:"#0369a1",letterSpacing:1,textTransform:"uppercase",margin:"0 0 10px"}}>
+              Invoice History ({getCustomerInvoices(viewCustomer.name).length})
+            </h3>
+            {getCustomerInvoices(viewCustomer.name).length === 0 ? (
+              <div style={{textAlign:"center",padding:"20px",color:"#94a3b8",border:"2px dashed #e2e8f0",borderRadius:8}}>No invoices yet</div>
+            ) : (
+              <div style={{maxHeight:280,overflowY:"auto",borderRadius:8,border:"1px solid #e2e8f0"}}>
+                <table style={{width:"100%",borderCollapse:"collapse"}}>
+                  <thead><tr style={{background:"#f8fafc"}}>
+                    {["Invoice No","Date","Items","Amount","Type"].map(h=>(
+                      <th key={h} style={{padding:"8px 10px",fontSize:11,fontWeight:700,color:"#94a3b8",textAlign:h==="Amount"?"right":"left",borderBottom:"1px solid #e2e8f0"}}>{h}</th>
+                    ))}
+                  </tr></thead>
+                  <tbody>
+                    {getCustomerInvoices(viewCustomer.name).map((inv,idx)=>(
+                      <tr key={inv.id} style={{background:idx%2===0?"#fff":"#f8fafc"}}>
+                        <td style={{padding:"8px 10px",fontSize:13,fontWeight:700,color:"#0369a1"}}>{inv.invoiceNo||"—"}</td>
+                        <td style={{padding:"8px 10px",fontSize:12,color:"#64748b"}}>{fmtDate(inv)}</td>
+                        <td style={{padding:"8px 10px",fontSize:12,color:"#64748b"}}>{(inv.items||[]).length}</td>
+                        <td style={{padding:"8px 10px",fontSize:13,fontWeight:700,textAlign:"right",color:"#0f172a"}}>Rs {fmt(inv.total||0)}</td>
+                        <td style={{padding:"8px 10px"}}><span style={{background:"#f0f9ff",color:"#0369a1",fontSize:11,fontWeight:600,padding:"2px 8px",borderRadius:4}}>{inv.docType||"Invoice"}</span></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr style={{background:"#f0f9ff",borderTop:"2px solid #bae6fd"}}>
+                      <td colSpan={3} style={{padding:"8px 10px",fontSize:12,fontWeight:700,color:"#0369a1"}}>Total Billed</td>
+                      <td style={{padding:"8px 10px",fontSize:14,fontWeight:800,textAlign:"right",color:"#0369a1"}}>Rs {fmt(getCustomerTotal(viewCustomer.name))}</td>
+                      <td/>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+const PRIMARY       = "#ea580c";
+const PRIMARY_LIGHT = "#f97316";
+
+const s = {
+  page:        {fontFamily:"'Inter','Segoe UI',system-ui,sans-serif",background:"#f8fafc",minHeight:"100vh"},
+  inner:       {maxWidth:1200,margin:"0 auto",padding:"28px 24px"},
+  header:      {display:"flex",justifyContent:"space-between",alignItems:"flex-end",marginBottom:14,flexWrap:"wrap",gap:12},
+  labelTag:    {color:PRIMARY_LIGHT,fontWeight:700,fontSize:11,letterSpacing:2,margin:0,textTransform:"uppercase"},
+  title:       {fontSize:28,fontWeight:800,color:"#0f172a",margin:"4px 0 0"},
+  headerRight: {display:"flex",gap:10,alignItems:"center",flexWrap:"wrap"},
+  search:      {padding:"9px 14px",borderRadius:9,border:"1.5px solid #e2e8f0",fontSize:14,outline:"none",width:280,boxSizing:"border-box"},
+  addBtn:      {background:`linear-gradient(135deg,${PRIMARY},${PRIMARY_LIGHT})`,color:"#fff",border:"none",borderRadius:9,padding:"10px 20px",fontSize:14,fontWeight:700,cursor:"pointer",boxShadow:"0 2px 8px rgba(234,88,12,0.25)"},
+  banner:      {borderRadius:10,padding:"10px 16px",marginBottom:20,fontSize:13,fontWeight:500},
+  bannerFire:  {background:"#ecfdf5",border:"1px solid #6ee7b7",color:"#065f46"},
+  bannerLocal: {background:"#fffbeb",border:"1px solid #fcd34d",color:"#92400e"},
+  statsRow:    {display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:16,marginBottom:24},
+  statCard:    {background:"#fff",borderRadius:14,padding:"18px 20px",boxShadow:"0 1px 4px rgba(0,0,0,0.06)",border:"1px solid #f1f5f9",textAlign:"center"},
+  statIcon:    {fontSize:28,marginBottom:6},
+  statVal:     {fontSize:22,fontWeight:800,color:"#0f172a"},
+  statLabel:   {fontSize:12,color:"#64748b",marginTop:2},
+  loading:     {textAlign:"center",padding:"60px 0",color:"#64748b"},
+  spinner:     {width:36,height:36,border:"3px solid #e2e8f0",borderTop:`3px solid ${PRIMARY}`,borderRadius:"50%",animation:"spin 0.8s linear infinite",margin:"0 auto 12px"},
+  empty:       {textAlign:"center",padding:"60px 0"},
+  tableWrap:   {background:"#fff",borderRadius:14,boxShadow:"0 1px 4px rgba(0,0,0,0.06)",border:"1px solid #f1f5f9",overflow:"hidden"},
+  table:       {width:"100%",borderCollapse:"collapse"},
+  thead:       {background:"#f8fafc"},
+  th:          {padding:"11px 14px",fontSize:11,fontWeight:700,color:"#94a3b8",textTransform:"uppercase",letterSpacing:0.8,borderBottom:"1px solid #e2e8f0",textAlign:"left"},
+  td:          {padding:"12px 14px",fontSize:13,borderBottom:"1px solid #f8fafc",verticalAlign:"top"},
+  trEven:      {background:"#fff"},
+  trOdd:       {background:"#fafcff"},
+  phoneBadge:  {background:"#f0fdf4",color:"#15803d",fontSize:12,fontWeight:600,padding:"2px 9px",borderRadius:6,border:"1px solid #bbf7d0"},
+  gstBadge:    {background:"#fefce8",color:"#a16207",fontSize:11,fontWeight:600,padding:"2px 8px",borderRadius:6,border:"1px solid #fde68a",fontFamily:"monospace"},
+  invBadge:    {background:"#eff6ff",color:"#1d4ed8",fontSize:12,fontWeight:700,padding:"2px 10px",borderRadius:6,border:"1px solid #bfdbfe",cursor:"pointer"},
+  btnEdit:     {background:"#f1f5f9",border:"none",borderRadius:6,padding:"5px 9px",cursor:"pointer",fontSize:13},
+  btnView:     {background:"#eff6ff",border:"none",borderRadius:6,padding:"5px 9px",cursor:"pointer",fontSize:13},
+  btnDel:      {background:"#fee2e2",border:"none",borderRadius:6,padding:"5px 9px",cursor:"pointer",fontSize:13},
+  overlay:     {position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:999,padding:16,backdropFilter:"blur(4px)"},
+  modal:       {background:"#fff",borderRadius:18,padding:28,width:"100%",maxWidth:520,boxShadow:"0 20px 60px rgba(0,0,0,0.2)",maxHeight:"90vh",overflowY:"auto"},
+  modalTitle:  {fontSize:20,fontWeight:800,color:"#0f172a",marginTop:0,marginBottom:16},
+  fGrid:       {display:"grid",gridTemplateColumns:"1fr 1fr",gap:"0 14px"},
+  lbl:         {display:"block",fontSize:12,fontWeight:600,color:"#374151",marginBottom:5},
+  inp:         {width:"100%",padding:"9px 11px",borderRadius:7,border:"1.5px solid #e2e8f0",fontSize:13,color:"#0f172a",marginBottom:12,boxSizing:"border-box",outline:"none"},
+  btn:         {padding:"9px 16px",borderRadius:8,border:"none",fontSize:13,fontWeight:700,cursor:"pointer"},
+  btnPrimary:  {background:`linear-gradient(135deg,${PRIMARY},${PRIMARY_LIGHT})`,color:"#fff"},
+  btnSecondary:{background:"#f1f5f9",color:"#334155"},
+};
