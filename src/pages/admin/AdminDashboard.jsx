@@ -87,7 +87,7 @@ function RevenueChart({ invoices }) {
   );
 }
 
-/* ── Activity Feed ───────────────────────────────────────────────────── */
+
 function ActivityFeed({ invoices, contacts }) {
   const items = useMemo(() => {
     const list = [];
@@ -148,7 +148,7 @@ function ActivityFeed({ invoices, contacts }) {
   );
 }
 
-/* ── Main Dashboard ──────────────────────────────────────────────────── */
+
 export default function AdminDashboard() {
   const { products } = useProducts();
   const { invoices } = useInvoices();
