@@ -97,7 +97,7 @@ export default function App() {
           >
             <ScrollToTop />
             <BackToTop />
-            {/* ✅ Suspense wraps routes so lazy-loaded pages can load */}
+            
             <Suspense
               fallback={
                 <Layout>

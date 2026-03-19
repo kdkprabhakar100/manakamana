@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useProducts } from "../../hooks/useProducts";
 import { useInvoices } from "../../hooks/useInvoices";
 import { useContacts } from "../../hooks/useContacts";
+import { useCustomers } from "../../hooks/useCustomers";
 
 /* ── SVG Icons (Lucide-style) ────────────────────────────────────────── */
 const ICON = {
