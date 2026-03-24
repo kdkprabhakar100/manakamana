@@ -95,13 +95,13 @@ export default function AdminInventory() {
                         <table style={s.table}>
                             <thead>
                                 <tr style={s.trHead}>
-                                    <th style={s.th}>Product Code / HS</th>
+                                    <th style={s.th}>HS</th>
+                                    <th style={s.th}>Product Code</th>
                                     <th style={{ ...s.th, textAlign: "left" }}>Product Name & Category</th>
                                     <th style={s.th}>Unit</th>
                                     <th style={s.th}>Rack</th>
                                     <th style={s.th}>Section</th>
                                     <th style={s.th}>Number of Products</th>
-                                    <th style={{ ...s.th, ...s.thRight }}>Opening</th>
                                     <th style={{ ...s.th, ...s.thRight }}>Received</th>
                                     <th style={{ ...s.th, ...s.thRight }}>Delivered</th>
                                     <th style={{ ...s.th, ...s.thRight }}>Balance</th>
@@ -110,12 +110,13 @@ export default function AdminInventory() {
                             <tbody>
                                 {filtered.length === 0 ? (
                                     <tr>
-                                        <td colSpan={7} style={s.tdEmpty}>No products found in inventory.</td>
+                                        <td colSpan={10} style={s.tdEmpty}>No products found in inventory.</td>
                                     </tr>
                                 ) : (
                                     filtered.map((item, idx) => (
                                         <tr key={item.id} style={idx % 2 === 0 ? s.trEven : s.trOdd}>
                                             <td style={s.td}>{item.hsCode || "—"}</td>
+                                            <td style={s.td}>{item.productCode || "—"}</td>
                                             <td style={{ ...s.td, textAlign: "left" }}>
                                                 <div style={s.itemName}>{item.name}</div>
                                                 {item.category && <div style={s.itemCat}>{item.category}</div>}
@@ -124,7 +125,6 @@ export default function AdminInventory() {
                                             <td style={s.td}>{item.rack || "—"}</td>
                                             <td style={s.td}>{item.section || "—"}</td>
                                             <td style={s.td}>{item.quantity}</td>
-                                            <td style={{ ...s.td, ...s.tdRight, color: "#475569" }}>{Number(item.opening).toFixed(3)}</td>
                                             <td style={{ ...s.td, ...s.tdRight, color: "#16a34a" }}>{Number(item.received).toFixed(3)}</td>
                                             <td style={{ ...s.td, ...s.tdRight, color: "#ef4444" }}>{Number(item.delivered).toFixed(3)}</td>
                                             <td style={{ ...s.td, ...s.tdRight, fontWeight: 700, color: item.balance < 5 ? "#dc2626" : "#0f172a" }}>
