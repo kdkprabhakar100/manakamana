@@ -34,7 +34,8 @@ function rowToProduct(row) {
 
   return {
     name:        find("partname","partsname","name","description","item","product"),
-    hsCode:      find("partno","partsno","partsnumber","partnumber","hscode","code","hs"),
+    
+    hsCode:      find("hscode","code","hs"),
     quantity:    (() => {
       // prefer closing stock, then qty
       const closing = find("closingstock","closing","balance","currentstock");
@@ -43,8 +44,9 @@ function rowToProduct(row) {
       const n = parseInt(qty); return isNaN(n) ? 0 : Math.max(0,n);
     })(),
     unit:        find("unit","uom","uos") || "NOS",
-    rack:        find("rack","location","bin","shelf"),
-    description: find("model","machinemodel","remarks","note","desc"),
+    rack:        find("rack","location","bin","shelf", "section"),
+    productCode: find("partno","partsno","partsnumber","partnumber", "modelnumber", "machine model", "machinmodels"),
+    description: find("remarks","note","desc", "description"),
     price:       findNum("rate","price","sellingprice","sp","mrp","unitprice"),
     costPrice:   findNum("costprice","cp","cost","purchaseprice","pp"),
     category:    find("category","cat","group","type"),
@@ -54,7 +56,7 @@ function rowToProduct(row) {
 
 const EMPTY = {
   name: "", price: "", costPrice: "", unit: "Nos",
-  category: "", hsCode: "", description: "", image: "",
+  category: "", hsCode: "",productCode:"", description: "", image: "",
   quantity: "",
   rack: "", section: "",
 };
@@ -112,6 +114,7 @@ export default function AdminProducts() {
       unit:        p.unit || "Nos",
       category:    p.category || "",
       hsCode:      p.hsCode || "",
+      productCode:  p.productCode || "",
       description: p.description || "",
       image:       p.image || "",
       quantity:    p.quantity !== undefined ? String(p.quantity) : "",
@@ -198,6 +201,7 @@ export default function AdminProducts() {
         unit:        form.unit,
         category:    form.category,
         hsCode:      form.hsCode.trim(),
+        productCode: form.productCode.trim(),
         description: form.description,
         image:       imageUrl,
         quantity:    form.quantity !== "" ? Number(form.quantity) : 0,
@@ -347,6 +351,7 @@ export default function AdminProducts() {
                   <h3 style={s.productName}>{product.name}</h3>
                   {product.description && <p style={s.productDesc}>{product.description}</p>}
                   {product.hsCode && <p style={{ fontSize: 11, color: "#94a3b8", margin: "0 0 4px" }}>HS: {product.hsCode}</p>}
+                  {product.productCode && <p style={{ fontSize: 11, color: "#94a3b8", margin: "0 0 4px" }}>HS: {product.productCode}</p>}
                   {product.unit && <span style={s.unitTag}>📦 per {product.unit}</span>}
                   {(product.rack || product.section) && (
                     <div style={s.rackChip}>🗄 {[product.rack, product.section].filter(Boolean).join(" › ")}</div>
@@ -465,7 +470,7 @@ export default function AdminProducts() {
                               <input type="checkbox" checked={xlSelected.length === xlRows.length && xlRows.length > 0}
                                 onChange={toggleAllXl} style={{ cursor:"pointer" }} />
                             </th>
-                            {["#","Parts No / HS","Product Name","Qty","Unit","Price","Description"].map(h => (
+                            {["#","HS", "Product code","Product Name","Qty","Unit","Price","Description"].map(h => (
                               <th key={h} style={th}>{h}</th>
                             ))}
                           </tr>
@@ -481,7 +486,7 @@ export default function AdminProducts() {
                                 </td>
                                 <td style={{ ...td, color:"#94a3b8" }}>{i+1}</td>
                                 <td style={{ ...td, fontFamily:"monospace", fontSize:10, color:"#0369a1", maxWidth:90, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{row.hsCode||"—"}</td>
-                                <td style={{ ...td, fontWeight:600, color:"#0f172a", maxWidth:160, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{row.name}</td>
+                                <td style={{ ...td, fontFamily:"monospace", fontSize:10, color:"#0369a1", maxWidth:90, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{row.productCode||"—"}</td>                                <td style={{ ...td, fontWeight:600, color:"#0f172a", maxWidth:160, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{row.name}</td>
                                 <td style={{ ...td, textAlign:"center", fontWeight:700, color: row.quantity > 0 ? "#16a34a" : "#94a3b8" }}>{row.quantity}</td>
                                 <td style={{ ...td, textAlign:"center", color:"#64748b" }}>{row.unit}</td>
                                 <td style={{ ...td, textAlign:"right", fontWeight:700 }}>{row.price ? `Rs ${Number(row.price).toLocaleString("en-IN")}` : "—"}</td>
@@ -571,6 +576,9 @@ export default function AdminProducts() {
                 <label style={s.fieldLabel}>HS Code</label>
                 <input style={s.input} placeholder="e.g. 84314990" value={form.hsCode}
                   onChange={e => setForm(f => ({ ...f, hsCode: e.target.value }))} />
+               <label style={s.fieldLabel}>Product Code</label>
+                <input style={s.input} placeholder="part-model-no" value={form.productCode}
+                  onChange={e => setForm(f => ({ ...f, productCode: e.target.value }))} />
               </div>
               <div />
             </div>

@@ -34,8 +34,6 @@ const AdminInvoice = lazy(() => import("./pages/admin/AdminInvoice"));
 const AdminInvoices = lazy(() => import("./pages/admin/AdminInvoices"));
 const AdminMessages = lazy(() => import("./pages/admin/AdminMessages"));
 const AdminCustomers = lazy(() => import("./pages/admin/AdminCustomers"));
-const ImportProducts = lazy(() => import("./pages/admin/ImportProducts"));
-
 function Layout({ children, hideFooter }) {
   const location = useLocation();
   const isHome = location.pathname === "/";
@@ -194,12 +192,7 @@ export default function App() {
                     </AdminRoute>
                   }
                 />
-                <Route path="/admin/import" element={
-                  <AdminRoute>
-                    <AdminLayout><ImportProducts /></AdminLayout>
-                  </AdminRoute>
-                  }
-                />
+
                 <Route
                   path="/admin/invoices"
                   element={
