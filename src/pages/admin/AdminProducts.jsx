@@ -325,10 +325,10 @@ const handleXLImport = async () => {
         normalize(p.productCode) === normalize(newProduct.productCode)
       );
 
-      const hsConflict = products.find(p =>
-        normalize(p.hsCode) === normalize(newProduct.hsCode) &&
-        normalize(p.productCode) !== normalize(newProduct.productCode)
-      );
+    const hsConflict = newProduct.hsCode?.trim() && products.find(p =>
+     normalize(p.hsCode) === normalize(newProduct.hsCode) &&
+     normalize(p.productCode) !== normalize(newProduct.productCode)
+    );
 
       if (hsConflict) {
         setXlError(`❌ HS Code ${newProduct.hsCode} already used by ${hsConflict.name}`);
