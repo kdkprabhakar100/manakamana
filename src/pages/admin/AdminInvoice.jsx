@@ -960,7 +960,16 @@ onChange={(e)=>setClient(p=>({...p,[k]:e.target.value}))}
                             }
                             <div>
                               <div style={s.dropName}>{p.name}</div>
-                              <div style={s.dropMeta}>{p.category || ""}{p.unit ? " · " + p.unit : ""}</div>
+                            <div style={s.dropMeta}>
+                               {p.category || ""}
+                               <span style={{
+                                marginLeft: 6,
+                                color: Number(p.quantity) < 5 ? "#dc2626" : "#16a34a",
+                                 fontWeight: 700,
+                                }}>
+                               Stock: {p.quantity ?? 0}
+  </span>
+</div>
                             </div>
                           </div>
                           <div style={{ display:"flex", alignItems:"center", gap:8 }}>
