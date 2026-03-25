@@ -49,6 +49,7 @@ export default function Navbar() {
   const logoNameColor = transparent ? "#fff" : DARK;
   const barBg = transparent ? "rgba(255,255,255,0.7)" : "#525252";
 
+
   return (
     <nav style={navStyle}>
       {/* Top accent stripe */}
@@ -101,6 +102,16 @@ export default function Navbar() {
               Messages
               {unreadCount > 0 && <span style={s.unreadBadge}>{unreadCount}</span>}
               {location.pathname === "/admin/messages" && <span style={s.linkBar} />}
+            </Link>
+          )}
+          {/* Bell icon for notifications */}
+          {isAdmin && (
+            <Link to="/admin/notification" className="nav-link-item" style={{ ...s.link, position: "relative" }} aria-label="Notifications">
+              <span style={{ fontSize: 22, display: "flex", alignItems: "center" }}>
+                {/* Simple bell SVG icon */}
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+              </span>
+              {location.pathname === "/admin/notification" && <span style={s.linkBar} />}
             </Link>
           )}
         </div>

@@ -1,20 +1,15 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
-import { useContacts } from "../../hooks/useContacts";
-import { useProducts } from "../../hooks/useProducts"; // <-- ADD THIS
+import { useNotifications } from "../../hooks/useNotifications"; // ← shared context
 import AdminSidebar from "./AdminSidebar";
 
 export default function AdminLayout({ children }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const { user, logout } = useAuth();
-  const { unreadCount } = useContacts();
-  const { products = [] } = useProducts(); // <-- ADD THIS
+  const { unreadCount } = useNotifications(); // ← single source of truth
   const [searchValue, setSearchValue] = useState("");
-
-  // Calculate low stock count (quantity < 5)
-  const lowStockCount = products.filter(p => p.quantity !== undefined && p.quantity < 5).length;
-  const notifTotal = unreadCount + lowStockCount;
-  const showNotif = notifTotal > 0;
+  const navigate = useNavigate();
 
   const sidebarW = sidebarCollapsed ? 72 : 260;
 
@@ -22,10 +17,14 @@ export default function AdminLayout({ children }) {
     <div style={{ display: "flex", minHeight: "100vh", background: "#f8fafc", fontFamily: "'Inter','Segoe UI',system-ui,sans-serif" }}>
       <AdminSidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(v => !v)} />
 
-      <div className="admin-main-area" style={{ marginLeft: sidebarW, flex: 1, transition: "margin-left 0.25s cubic-bezier(0.4,0,0.2,1)", display: "flex", flexDirection: "column", minHeight: "100vh" }}>
+      <div
+        className="admin-main-area"
+        style={{ marginLeft: sidebarW, flex: 1, transition: "margin-left 0.25s cubic-bezier(0.4,0,0.2,1)", display: "flex", flexDirection: "column", minHeight: "100vh" }}
+      >
         {/* Top header bar */}
         <header className="admin-topbar" style={st.topbar}>
           <div style={st.topInner}>
+
             {/* Search */}
             <div style={st.searchWrap}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
@@ -43,18 +42,26 @@ export default function AdminLayout({ children }) {
 
             {/* Right section */}
             <div style={st.topRight}>
-              {/* Notification bell */}
-              <button style={st.iconBtn} title="Notifications">
+
+              {/* Bell — navigates to /admin/notification, badge from shared context */}
+              <button
+                style={st.iconBtn}
+                title="Notifications"
+                onClick={() => navigate("/admin/notification")}
+              >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/>
+                  <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                  <path d="M13.73 21a2 2 0 01-3.46 0"/>
                 </svg>
-                {showNotif && <span style={st.notifDot}>{notifTotal}</span>}
+                {unreadCount > 0 && (
+                  <span style={st.notifDot}>{unreadCount}</span>
+                )}
               </button>
 
               {/* Divider */}
               <div style={st.topDivider} />
 
-              {/* User avatar + info */}
+              {/* User info */}
               <div style={st.userArea}>
                 <div style={st.avatar}>
                   {(user?.email || "A")[0].toUpperCase()}
@@ -67,14 +74,16 @@ export default function AdminLayout({ children }) {
 
               <button onClick={logout} style={st.logoutBtn} title="Sign out">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+                  <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
+                  <polyline points="16 17 21 12 16 7"/>
+                  <line x1="21" y1="12" x2="9" y2="12"/>
                 </svg>
               </button>
             </div>
           </div>
         </header>
 
-        {/* Main content */}
+        {/* Page content */}
         <main style={{ flex: 1, overflow: "auto" }}>
           {children}
         </main>
@@ -98,12 +107,10 @@ const st = {
     display: "flex", alignItems: "center", gap: 10,
     background: "#f8fafc", border: "1px solid #e5e7eb", borderRadius: 10,
     padding: "8px 14px", width: 360, maxWidth: "100%",
-    transition: "border-color 0.15s, box-shadow 0.15s",
   },
   searchInput: {
     border: "none", outline: "none", background: "none",
-    fontSize: 13, color: "#0f172a", flex: 1,
-    fontFamily: "inherit",
+    fontSize: 13, color: "#0f172a", flex: 1, fontFamily: "inherit",
   },
   kbd: {
     fontSize: 10, color: "#94a3b8", background: "#f1f5f9",
@@ -118,7 +125,8 @@ const st = {
   },
   notifDot: {
     position: "absolute", top: 2, right: 2,
-    background: "#ef4444", color: "#fff", fontSize: 9, fontWeight: 700,
+    background: "#ef4444", color: "#fff",
+    fontSize: 9, fontWeight: 700,
     width: 16, height: 16, borderRadius: "50%",
     display: "flex", alignItems: "center", justifyContent: "center",
     border: "2px solid #fff",
@@ -129,11 +137,10 @@ const st = {
     width: 32, height: 32, borderRadius: "50%",
     background: "linear-gradient(135deg,#6366f1,#8b5cf6)",
     color: "#fff", fontSize: 13, fontWeight: 700,
-    display: "flex", alignItems: "center", justifyContent: "center",
-    flexShrink: 0,
+    display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
   },
   userInfo: { lineHeight: 1.3 },
-  userName: { fontSize: 13, fontWeight: 600, color: "#0f172a" },
+  userName:  { fontSize: 13, fontWeight: 600, color: "#0f172a" },
   userEmail: { fontSize: 11, color: "#94a3b8" },
   logoutBtn: {
     background: "none", border: "none", cursor: "pointer",
