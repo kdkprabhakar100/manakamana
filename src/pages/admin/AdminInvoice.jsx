@@ -968,8 +968,8 @@ onChange={(e)=>setClient(p=>({...p,[k]:e.target.value}))}
                                  fontWeight: 700,
                                 }}>
                                Stock: {p.quantity ?? 0}
-  </span>
-</div>
+                              </span>
+                              </div>
                             </div>
                           </div>
                           <div style={{ display:"flex", alignItems:"center", gap:8 }}>

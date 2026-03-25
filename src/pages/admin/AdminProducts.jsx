@@ -228,16 +228,16 @@ export default function AdminProducts() {
     );
 
     // 🔥 HS CODE VALIDATION
-    const hsConflict = products.find(p =>
-      normalize(p.hsCode) === normalize(productData.hsCode) &&
-      normalize(p.productCode) !== normalize(productData.productCode)
+    const hsConflict = productData.hsCode.trim() && products.find(p =>
+    normalize(p.hsCode) === normalize(productData.hsCode) &&
+    normalize(p.productCode) !== normalize(productData.productCode)
     );
 
-    if (hsConflict) {
-      alert(`❌ HS Code ${productData.hsCode} already used by ${hsConflict.name}`);
-      setSaving(false);
-      return;
-    }
+  if (hsConflict) {
+    alert(`❌ HS Code ${productData.hsCode} already used by ${hsConflict.name}`);
+    setSaving(false);
+    return;
+  }
 
     if (editing) {
       await updateProduct(editing.id, productData);
