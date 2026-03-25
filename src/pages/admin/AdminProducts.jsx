@@ -407,17 +407,6 @@ const handleXLImport = async () => {
             : `✅ Connected to Firebase — ${products.length} products in catalogue.`}
         </div>
 
-        {/* Low stock alert */}
-        {(() => {
-          const low = products.filter(p => p.quantity !== undefined && p.quantity < 5);
-          return low.length > 0 && (
-            <div style={s.lowStockBanner}>
-              ⚠️ Low Stock Alert — {low.length} product{low.length > 1 ? "s" : ""} below 5 units:{" "}
-              <strong>{low.map(p => `${p.name} (${p.quantity ?? 0})`).join(", ")}</strong>
-            </div>
-          );
-        })()}
-
         {loading ? (
           <div style={s.loading}>
             <div style={s.spinnerWrap}><div style={s.spinner} /></div>
@@ -815,7 +804,6 @@ const s = {
   banner:       { borderRadius: 10, padding: "10px 16px", marginBottom: 16, fontSize: 13, fontWeight: 500 },
   bannerFire:   { background: "#ecfdf5", border: "1px solid #6ee7b7", color: "#065f46" },
   bannerLocal:  { background: "#fffbeb", border: "1px solid #fcd34d", color: "#92400e" },
-  lowStockBanner: { borderRadius: 10, padding: "10px 16px", marginBottom: 16, fontSize: 13, fontWeight: 500, background: "#fef2f2", border: "1px solid #fca5a5", color: "#991b1b" },
   loading:      { textAlign: "center", padding: "60px 0", color: "#64748b" },
   spinnerWrap:  { display: "flex", justifyContent: "center", marginBottom: 12 },
   spinner:      { width: 36, height: 36, border: "3px solid #e2e8f0", borderTop: `3px solid ${PRIMARY}`, borderRadius: "50%", animation: "spin 0.8s linear infinite" },
