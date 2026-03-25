@@ -95,10 +95,20 @@ export default function AdminProducts() {
   const [xlFileName,   setXlFileName]   = useState("");
   const xlFileRef = useRef();
 
-  const filtered = products.filter(p =>
-    p.name.toLowerCase().includes(search.toLowerCase()) ||
-    (p.category || "").toLowerCase().includes(search.toLowerCase())
+const filtered = products.filter(p => {
+  const q = search.toLowerCase();
+  return (
+    p.name.toLowerCase().includes(q) ||
+    (p.category     || "").toLowerCase().includes(q) ||
+    (p.hsCode       || "").toLowerCase().includes(q) ||
+    (p.productCode  || "").toLowerCase().includes(q) ||
+    (p.rack         || "").toLowerCase().includes(q) ||
+    (p.section      || "").toLowerCase().includes(q) ||
+    (p.unit         || "").toLowerCase().includes(q) ||
+    (p.description  || "").toLowerCase().includes(q) ||
+    String(p.price  || "").includes(q)
   );
+});
 
   const openAdd = () => {
     setEditing(null);
