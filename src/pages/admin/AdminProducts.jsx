@@ -18,6 +18,7 @@ function loadSheetJS() {
 
 /* ── Normalise a header string for matching ── */
 const norm = (s) => String(s || "").toLowerCase().replace(/[\s_\-./()]/g, "");
+const normalize = (v) => String(v || "").toLowerCase().trim();
 
 /* ── Map a raw row object → product fields ── */
 function rowToProduct(row) {
@@ -44,7 +45,8 @@ function rowToProduct(row) {
       const n = parseInt(qty); return isNaN(n) ? 0 : Math.max(0,n);
     })(),
     unit:        find("unit","uom","uos") || "NOS",
-    rack:        find("rack","location","bin","shelf", "section"),
+    rack:        find("rack","location"),
+    section:     find("bin","shelf", "section"),
     productCode: find("partno","partsno","partsnumber","partnumber", "modelnumber", "machine model", "machinmodels"),
     description: find("remarks","note","desc", "description"),
     price:       findNum("rate","price","sellingprice","sp","mrp","unitprice"),
@@ -183,41 +185,88 @@ export default function AdminProducts() {
     }
   };
 
-  const handleSave = async () => {
-    if (!form.name.trim()) { alert("Product name is required."); return; }
-    if (form.price !== "" && (isNaN(Number(form.price)) || Number(form.price) < 0)) { alert("Selling price cannot be negative."); return; }
-    if (form.costPrice !== "" && (isNaN(Number(form.costPrice)) || Number(form.costPrice) < 0)) { alert("Cost price cannot be negative."); return; }
-    setSaving(true);
-    try {
-      let imageUrl = form.image;
-      if (form._imageBlob) {
-        setUploadProgress("Preparing image...");
-        imageUrl = await blobToBase64(form._imageBlob);
-      }
-      const productData = {
-        name:        form.name.trim(),
-        price:       form.price     ? Math.abs(Number(form.price)).toString()     : "",
-        costPrice:   form.costPrice ? Math.abs(Number(form.costPrice)).toString() : "",
-        unit:        form.unit,
-        category:    form.category,
-        hsCode:      form.hsCode.trim(),
-        productCode: form.productCode.trim(),
-        description: form.description,
-        image:       imageUrl,
-        quantity:    form.quantity !== "" ? Number(form.quantity) : 0,
-        rack:        form.rack,
-        section:     form.section,
-      };
-      if (editing) await updateProduct(editing.id, productData);
-      else         await addProduct(productData);
-      setShowModal(false);
-    } catch (err) {
-      alert("Failed to save product: " + err.message);
-    } finally {
-      setSaving(false);
-      setUploadProgress("");
+    const handleSave = async () => {
+  // 🔥 VALIDATION
+  if (!form.name.trim()) {
+    alert("Product name is required.");
+    return;
+  }
+
+  if (!form.productCode.trim()) {
+    alert("Product model is required.");
+    return;
+  }
+
+  setSaving(true);
+
+  try {
+    let imageUrl = form.image;
+
+    if (form._imageBlob) {
+      setUploadProgress("Preparing image...");
+      imageUrl = await blobToBase64(form._imageBlob);
     }
-  };
+
+    const productData = {
+      name: form.name.trim(),
+      price: form.price ? Math.abs(Number(form.price)).toString() : "",
+      costPrice: form.costPrice ? Math.abs(Number(form.costPrice)).toString() : "",
+      unit: form.unit,
+      category: form.category,
+      hsCode: form.hsCode.trim(),
+      productCode: form.productCode.trim(), // ✅ FIXED
+      description: form.description,
+      image: imageUrl,
+      quantity: form.quantity !== "" ? Number(form.quantity) : 0,
+      rack: form.rack,
+      section: form.section,
+    };
+
+    // 🔍 CHECK EXISTING PRODUCT (ONLY BY productCode)
+    const existing = products.find(p =>
+      normalize(p.productCode) === normalize(productData.productCode)
+    );
+
+    // 🔥 HS CODE VALIDATION
+    const hsConflict = products.find(p =>
+      normalize(p.hsCode) === normalize(productData.hsCode) &&
+      normalize(p.productCode) !== normalize(productData.productCode)
+    );
+
+    if (hsConflict) {
+      alert(`❌ HS Code ${productData.hsCode} already used by ${hsConflict.name}`);
+      setSaving(false);
+      return;
+    }
+
+    if (editing) {
+      await updateProduct(editing.id, productData);
+
+    } else if (existing) {
+      // ✅ MERGE STOCK
+      await updateProduct(existing.id, {
+        ...existing,
+        quantity: (existing.quantity || 0) + productData.quantity,
+        price: productData.price || existing.price,
+        costPrice: productData.costPrice || existing.costPrice,
+      });
+
+      alert("✅ Product exists → Stock updated");
+
+    } else {
+      // ✅ NEW PRODUCT
+      await addProduct(productData);
+    }
+
+    setShowModal(false);
+
+  } catch (err) {
+    alert("Failed to save product: " + err.message);
+  } finally {
+    setSaving(false);
+    setUploadProgress("");
+  }
+};
 
   const handleDelete = async (id) => {
     await deleteProduct(id);
@@ -256,23 +305,62 @@ export default function AdminProducts() {
     e.target.value = "";
   };
 
-  const handleXLImport = async () => {
-    const toImport = xlSelected.map(i => xlRows[i]).filter(Boolean);
-    if (toImport.length === 0) return;
-    setXlImporting(true);
-    setXlProgress(0);
-    try {
-      for (let i = 0; i < toImport.length; i++) {
-        await addProduct(toImport[i]);
-        setXlProgress(i + 1);
+const handleXLImport = async () => {
+  const toImport = xlSelected.map(i => xlRows[i]).filter(Boolean);
+  if (toImport.length === 0) return;
+
+  setXlImporting(true);
+  setXlProgress(0);
+
+  try {
+    for (let i = 0; i < toImport.length; i++) {
+      const newProduct = toImport[i];
+
+      if (!newProduct.productCode) {
+        console.warn("Skipping product without product code");
+        continue;
       }
-      setXlDone(true);
-    } catch (err) {
-      setXlError("Import failed: " + err.message);
-    } finally {
-      setXlImporting(false);
+
+      const existing = products.find(p =>
+        normalize(p.productCode) === normalize(newProduct.productCode)
+      );
+
+      const hsConflict = products.find(p =>
+        normalize(p.hsCode) === normalize(newProduct.hsCode) &&
+        normalize(p.productCode) !== normalize(newProduct.productCode)
+      );
+
+      if (hsConflict) {
+        setXlError(`❌ HS Code ${newProduct.hsCode} already used by ${hsConflict.name}`);
+        setXlImporting(false);
+        return;
+      }
+
+      if (existing) {
+        // ✅ MERGE STOCK
+        await updateProduct(existing.id, {
+          ...existing,
+          quantity: (existing.quantity || 0) + (newProduct.quantity || 0),
+          price: newProduct.price || existing.price,
+          costPrice: newProduct.costPrice || existing.costPrice,
+        });
+
+      } else {
+        // ✅ NEW PRODUCT
+        await addProduct(newProduct);
+      }
+
+      setXlProgress(i + 1);
     }
-  };
+
+    setXlDone(true);
+
+  } catch (err) {
+    setXlError("Import failed: " + err.message);
+  } finally {
+    setXlImporting(false);
+  }
+};
 
   const toggleXlRow = (i) =>
     setXlSelected(prev =>
@@ -351,7 +439,7 @@ export default function AdminProducts() {
                   <h3 style={s.productName}>{product.name}</h3>
                   {product.description && <p style={s.productDesc}>{product.description}</p>}
                   {product.hsCode && <p style={{ fontSize: 11, color: "#94a3b8", margin: "0 0 4px" }}>HS: {product.hsCode}</p>}
-                  {product.productCode && <p style={{ fontSize: 11, color: "#94a3b8", margin: "0 0 4px" }}>HS: {product.productCode}</p>}
+                  {product.productCode && <p style={{ fontSize: 11, color: "#94a3b8", margin: "0 0 4px" }}>Product-code: {product.productCode}</p>}
                   {product.unit && <span style={s.unitTag}>📦 per {product.unit}</span>}
                   {(product.rack || product.section) && (
                     <div style={s.rackChip}>🗄 {[product.rack, product.section].filter(Boolean).join(" › ")}</div>
@@ -429,7 +517,7 @@ export default function AdminProducts() {
                 {/* Column mapping hint */}
                 {xlRows.length === 0 && !xlError && (
                   <div style={{ background:"#f0f9ff", border:"1px solid #bae6fd", borderRadius:10, padding:"12px 16px", fontSize:12, color:"#0369a1", marginBottom:0 }}>
-                    <strong>Auto-detected columns:</strong> Parts Name/Name → <em>Product Name</em> &nbsp;·&nbsp; Parts No/HS Code → <em>HS Code</em> &nbsp;·&nbsp; Rate/Price → <em>Price</em> &nbsp;·&nbsp; Closing Stock/Qty → <em>Quantity</em> &nbsp;·&nbsp; Unit, Rack, Machine Model also supported
+                    <strong>Auto-detected columns:</strong> Parts Name/Name → <em>Product Name</em> &nbsp;·&nbsp; HS Code → <em>HS Code</em> &nbsp;·&nbsp; Rate/Price → <em>Price</em> &nbsp;·&nbsp; Closing Stock/Qty → <em>Quantity</em> &nbsp;·&nbsp; Unit, Rack, Machine Model also supported
                   </div>
                 )}
 
@@ -576,8 +664,7 @@ export default function AdminProducts() {
                 <label style={s.fieldLabel}>HS Code</label>
                 <input style={s.input} placeholder="e.g. 84314990" value={form.hsCode}
                   onChange={e => setForm(f => ({ ...f, hsCode: e.target.value }))} />
-               <label style={s.fieldLabel}>Product Code</label>
-                <input style={s.input} placeholder="part-model-no" value={form.productCode}
+                <label style={s.fieldLabel}>Product Model <span style={{ color: "#ef4444" }}>*</span></label>                <input style={s.input} placeholder="part-model-no" value={form.productCode}
                   onChange={e => setForm(f => ({ ...f, productCode: e.target.value }))} />
               </div>
               <div />
