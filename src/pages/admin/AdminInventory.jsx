@@ -27,12 +27,26 @@ export default function AdminInventory() {
     }, [products, invoices, loading]);
 
     const filtered = useMemo(() => {
-        if (!search.trim()) return ledgerData;
-        const lower = search.toLowerCase();
+        const q = search.toLowerCase().trim();
+
+        if (!q) return ledgerData;
+
         return ledgerData.filter(item =>
-            item.name.toLowerCase().includes(lower) ||
-            (item.category || "").toLowerCase().includes(lower) ||
-            (item.hsCode || "").toLowerCase().includes(lower)
+            [
+                item.name,
+                item.category,
+                item.hsCode,
+                item.productCode,
+                item.unit,
+                item.rack,
+                item.section,
+                item.quantity,
+                item.sellingPrice,
+                item.totalAmount,
+                item.price,
+            ]
+                .map(v => String(v || "").toLowerCase())
+                .some(v => v.includes(q))
         );
     }, [search, ledgerData]);
 

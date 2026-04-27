@@ -57,7 +57,7 @@ function RevenueChart({ invoices }) {
           <p style={st.chartSub}>Last 6 months</p>
         </div>
         <div style={st.chartTotal}>
-          <span style={st.chartTotalValue}>₹{invoices.reduce((s, inv) => s + (inv.total || 0), 0).toLocaleString("en-IN")}</span>
+          <span style={st.chartTotalValue}>Rs{invoices.reduce((s, inv) => s + (inv.total || 0), 0).toLocaleString("en-IN")}</span>
           <span style={st.chartTotalLabel}>Total Revenue</span>
         </div>
       </div>
@@ -95,7 +95,7 @@ function ActivityFeed({ invoices, contacts }) {
       list.push({
         type: "invoice",
         text: `Invoice #${inv.invoiceNo || "—"} created for ${inv.clientName || "a client"}`,
-        detail: `₹${(inv.total || 0).toLocaleString("en-IN")}`,
+        detail: `Rs${(inv.total || 0).toLocaleString("en-IN")}`,
         time: inv.createdAt?.toDate ? inv.createdAt.toDate() : inv.invoiceDate ? new Date(inv.invoiceDate) : null,
         color: "#6366f1",
         bg: "#eef2ff",
@@ -161,7 +161,7 @@ export default function AdminDashboard() {
   const stats = [
     { icon: ICON.package, label: "Total Products", value: products.length, change: `${products.length}`, color: "#6366f1", bg: "#eef2ff" },
     { icon: ICON.fileText, label: "Total Invoices", value: invoices.length, change: `${invoices.length}`, color: "#f59e0b", bg: "#fffbeb" },
-    { icon: ICON.dollar, label: "Total Revenue", value: `₹${totalRevenue.toLocaleString("en-IN")}`, change: "all time", color: "#10b981", bg: "#ecfdf5" },
+    { icon: ICON.dollar, label: "Total Revenue", value: `Rs${totalRevenue.toLocaleString("en-IN")}`, change: "all time", color: "#10b981", bg: "#ecfdf5" },
     { icon: ICON.mail, label: "Messages", value: contacts.length, change: unreadCount > 0 ? `${unreadCount} new` : "All read", color: unreadCount > 0 ? "#ef4444" : "#8b5cf6", bg: unreadCount > 0 ? "#fef2f2" : "#f5f3ff" },
   ];
 
@@ -212,7 +212,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Notifications (low stock) */}
-      {lowStockProducts.length > 0 && (
+      {/* {lowStockProducts.length > 0 && (
         <div style={st.alertBanner}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <span style={st.alertIcon}>⚠️</span>
@@ -225,7 +225,7 @@ export default function AdminDashboard() {
           </div>
           <Link to="/admin/products" style={st.alertLink}>Manage Stock →</Link>
         </div>
-      )}
+      )} */}
 
       {/* Chart + Activity Row */}
       <div className="admin-chart-row" style={st.chartRow}>
@@ -284,7 +284,7 @@ export default function AdminDashboard() {
                         </span>
                       </td>
                       <td style={{ ...st.td, color: "#64748b" }}>{inv.invoiceDate || "—"}</td>
-                      <td style={{ ...st.td, fontWeight: 600, color: "#0f172a" }}>₹{(inv.total || 0).toLocaleString("en-IN")}</td>
+                      <td style={{ ...st.td, fontWeight: 600, color: "#0f172a" }}>Rs{(inv.total || 0).toLocaleString("en-IN")}</td>
                       <td style={st.td}>
                         <Link to={`/admin/invoice/${inv.id}`} className="admin-view-btn" style={st.viewBtn}>
                           {ICON.eye}

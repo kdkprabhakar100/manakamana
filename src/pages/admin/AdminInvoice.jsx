@@ -334,10 +334,26 @@ const [showClientDrop, setShowClientDrop] = useState(false);
 
   /* ── Product search ── */
   const filtered = search.trim()
-    ? products.filter(p =>
-        p.name.toLowerCase().includes(search.toLowerCase()) ||
-        (p.category || "").toLowerCase().includes(search.toLowerCase())
-      )
+    ? products.filter(p => {
+        const q = search.toLowerCase().trim();
+
+        return [
+          p.name,
+          p.category,
+          p.hsCode,
+          p.productCode,
+          p.unit,
+          p.rack,
+          p.section,
+          p.quantity,
+          p.price,
+          p.sellingPrice,
+          p.costPrice,
+          p.description,
+        ]
+          .map(v => String(v || "").toLowerCase())
+          .some(v => v.includes(q));
+      })
     : products;
 
   function addProduct(product) {
@@ -958,19 +974,32 @@ onChange={(e)=>setClient(p=>({...p,[k]:e.target.value}))}
                               ? <img src={p.image} alt={p.name} style={s.dropImg} onError={e => e.target.style.display="none"} />
                               : <div style={s.dropImgPlaceholder}>⚙️</div>
                             }
-                            <div>
-                              <div style={s.dropName}>{p.name}</div>
-                            <div style={s.dropMeta}>
-                               {p.category || ""}
-                               <span style={{
-                                marginLeft: 6,
-                                color: Number(p.quantity) < 5 ? "#dc2626" : "#16a34a",
-                                 fontWeight: 700,
-                                }}>
-                               Stock: {p.quantity ?? 0}
-                              </span>
+                              <div>
+                                <div style={s.dropName}>
+                                  {p.name}
+                                  {p.productCode && (
+                                    <span style={s.dropCode}> | {p.productCode}</span>
+                                  )}
+                                  {p.category && (
+                                    <span style={s.dropCat}> | {p.category}</span>
+                                  )}
+                                </div>
+
+                                <div style={s.dropMeta}>
+                                  <span style={{
+                                    color: Number(p.quantity) < 5 ? "#dc2626" : "#16a34a",
+                                    fontWeight: 700,
+                                  }}>
+                                    Stock: {p.quantity ?? 0}
+                                  </span>
+
+                                  {p.description && (
+                                    <span style={{ marginLeft: 10 }}>
+                                      {p.description}
+                                    </span>
+                                  )}
+                                </div>
                               </div>
-                            </div>
                           </div>
                           <div style={{ display:"flex", alignItems:"center", gap:8 }}>
                             <span style={s.dropPrice}>{p.price ? "Rs " + fmt(Number(p.price)) : "On request"}</span>
@@ -1168,4 +1197,15 @@ const s = {
     background: "#f8fafc",
     boxShadow: "0 4px 20px rgba(0,0,0,0.10)",
   },
+  dropCode: {
+  fontSize: 12,
+  fontWeight: 600,
+  color: "#64748b",
+},
+
+dropCat: {
+  fontSize: 12,
+  fontWeight: 500,
+  color: "#94a3b8",
+},
 };
