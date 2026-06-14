@@ -99,9 +99,8 @@ Visit: [http://localhost:5173](http://localhost:5173)
 | `/admin/invoices` | All Invoices |
 | `/admin/invoice/new` | New Invoice |
 
-**Default credentials:**
-- Email: `admin@manakamana.com`
-- Password: `Admin@1234`
+
+
 
 ---
 
