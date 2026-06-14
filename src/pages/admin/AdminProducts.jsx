@@ -20,6 +20,61 @@ function loadSheetJS() {
 const norm = (s) => String(s || "").toLowerCase().replace(/[\s_\-./()]/g, "");
 const normalize = (v) => String(v || "").toLowerCase().trim();
 
+function csvCell(value) {
+  const text = String(value ?? "");
+  return `"${text.replace(/"/g, '""')}"`;
+}
+
+function exportProductsCSV(products) {
+  const headers = [
+    "Product Name",
+    "Product Model",
+    "HS Code",
+    "Category",
+    "Description",
+    "Unit",
+    "Stock Quantity",
+    "Rack",
+    "Section",
+    "Selling Price",
+    "Cost Price",
+    "Image",
+  ];
+
+  const rows = products.map((product) => [
+    product.name || "",
+    product.productCode || "",
+    product.hsCode || "",
+    product.category || "",
+    product.description || "",
+    product.unit || "",
+    product.quantity ?? 0,
+    product.rack || "",
+    product.section || "",
+    product.price || "",
+    product.costPrice || "",
+    product.image || "",
+  ]);
+
+  const csv = [headers, ...rows]
+    .map((row) => row.map(csvCell).join(","))
+    .join("\n");
+
+  const blob = new Blob(["\uFEFF" + csv], {
+    type: "text/csv;charset=utf-8",
+  });
+
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+
+  link.href = url;
+  link.download = `products_${new Date().toISOString().slice(0, 10)}.csv`;
+  link.click();
+
+  URL.revokeObjectURL(url);
+}
+
+
 /* ── Map a raw row object → product fields ── */
 function rowToProduct(row) {
   const keys = Object.keys(row);
@@ -398,6 +453,9 @@ const handleXLImport = async () => {
           <div style={s.headerRight}>
             <input style={s.search} placeholder="🔍 Search products…"
               value={search} onChange={e => setSearch(e.target.value)} />
+            <button style={s.exportBtn} onClick={() => exportProductsCSV(products)}>
+              📤 Export CSV
+            </button>
             <button style={s.xlBtn} onClick={() => { setShowXL(true); setXlRows([]); setXlSelected([]); setXlDone(false); setXlError(""); setXlFileName(""); }}>
               📥 Import Excel
             </button>
@@ -805,6 +863,7 @@ const s = {
   headerRight:  { display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" },
   search:       { padding: "9px 14px", borderRadius: 9, border: "1.5px solid #e2e8f0", fontSize: 14, outline: "none", width: 240, boxSizing: "border-box" },
   addBtn:       { background: `linear-gradient(135deg,${PRIMARY},${PRIMARY_LIGHT})`, color: "#fff", border: "none", borderRadius: 9, padding: "10px 20px", fontSize: 14, fontWeight: 700, cursor: "pointer", boxShadow: "0 2px 8px rgba(234,88,12,0.25)" },
+  exportBtn:    { background: "#fff", color: "#334155", border: "1.5px solid #e2e8f0", borderRadius: 9, padding: "10px 18px", fontSize: 14, fontWeight: 700, cursor: "pointer" },
   xlBtn:        { background: "#f0f9ff", color: "#0369a1", border: "1.5px solid #bae6fd", borderRadius: 9, padding: "10px 18px", fontSize: 14, fontWeight: 700, cursor: "pointer" },
   banner:       { borderRadius: 10, padding: "10px 16px", marginBottom: 16, fontSize: 13, fontWeight: 500 },
   bannerFire:   { background: "#ecfdf5", border: "1px solid #6ee7b7", color: "#065f46" },

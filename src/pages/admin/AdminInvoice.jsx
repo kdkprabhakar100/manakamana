@@ -291,57 +291,31 @@ const today = () => new Date().toISOString().slice(0, 10);
   const [clientSearch, setClientSearch] = useState("");
 const [showClientDrop, setShowClientDrop] = useState(false);
 
+  // useEffect(() => {
+  //   if (id && id !== "new") {
+  //     const existing = invoices.find(i => i.id === id);
+  //     if (existing) {
+  //       setInvoiceNo(existing.invoiceNo || newInvoiceNo());
+  //       setInvoiceDate(existing.invoiceDate || today());
+  //       setDueDate(existing.dueDate || "");
+  //       setDocType(existing.docType || "Invoice");
+  //       setClient(existing.client || EMPTY_CLIENT);
+  //       setItems(existing.items || []);
+  //       setDiscountPct(existing.discountPct || 0);
+  //       setTaxEnabled(existing.taxEnabled ?? true);
+  //       setNotes(existing.notes || "");
+  //       setTerms(existing.terms || "");
+  //       setCompany(existing.company || DEFAULT_COMPANY);
+  //     }
+  //   }
+  // // eslint-disable-next-line react-hooks/exhaustive-deps
+  // }, [id, invoices]);
+
   useEffect(() => {
-    if (!id || id === "new") {
-      if (!invoiceNo) {
-        setInvoiceNo(generateInvoiceNo(invoices));
-      }
-      return;
+    if (!id || id =="new"){
+      setInvoiceNo(generateInvoiceNo(invoices));
     }
-
-    let invoiceFromSession = null;
-
-    try {
-      const sessionInvoice = sessionStorage.getItem("manakamana_edit_invoice");
-      invoiceFromSession = sessionInvoice ? JSON.parse(sessionInvoice) : null;
-    } catch {
-      invoiceFromSession = null;
-    }
-
-    const existing =
-      invoices.find((inv) => inv.id === id) ||
-      (invoiceFromSession && invoiceFromSession.id === id ? invoiceFromSession : null);
-
-    if (!existing) return;
-
-    setInvoiceNo(existing.invoiceNo || "");
-    setInvoiceDate(existing.invoiceDate || today());
-    setDueDate(existing.dueDate || "");
-    setDocType(existing.docType || "Invoice");
-
-    setCompany(existing.company || DEFAULT_COMPANY);
-
-    setClient({
-      ...EMPTY_CLIENT,
-      ...(existing.client || {}),
-      name: existing.client?.name || existing.clientName || "",
-      company: existing.client?.company || "",
-      address: existing.client?.address || "",
-      phone: existing.client?.phone || "",
-      gstin: existing.client?.gstin || "",
-      payment: existing.client?.payment || "Cash/Credit",
-    });
-
-    setClientSearch(existing.client?.name || existing.clientName || "");
-    setItems(existing.items || []);
-    setDiscountPct(existing.discountPct || 0);
-    setTaxEnabled(existing.taxEnabled ?? true);
-    setNotes(existing.notes || "");
-    setTerms(
-      existing.terms ||
-        "Payment due within 30 days.\nGoods once sold will not be taken back."
-    );
-  }, [id, invoices]);
+  }, [invoices, id]);
 
   /* ── Calculations ── */
   const subtotal = items.reduce((s, i) => s + i.qty * i.rate, 0);
@@ -765,10 +739,6 @@ const [showClientDrop, setShowClientDrop] = useState(false);
             <select style={s.docSel} value={docType} onChange={e => setDocType(e.target.value)}>
               {["Invoice","Estimate","Proforma Invoice","Quotation"].map(o => <option key={o}>{o}</option>)}
             </select>
-            <button style={{ ...s.btn, ...s.btnGhost }} onClick={handlePrint}>🖨 Print / PDF</button>
-            <button style={{ ...s.btn, ...s.btnSave }} onClick={handleSave} disabled={saving}>
-              {saving ? "Saving…" : "💾 Save"}
-            </button>
           </div>
         </div>
 

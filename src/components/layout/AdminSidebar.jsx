@@ -7,6 +7,7 @@ const NAV_ITEMS = [
   { to: "/admin/inventory", icon: "inventory", label: "Inventory" },
   { to: "/admin/invoices", icon: "invoices", label: "Invoices" },
   { to: "/admin/invoice/new", icon: "newInvoice", label: "New Invoice" },
+  { to: "/admin/users", icon: "user", label: "Users" },
   { to: "/admin/messages", icon: "messages", label: "Messages" },
   { to: "/admin/customers", icon: "user", label: "Client List" },
 ];

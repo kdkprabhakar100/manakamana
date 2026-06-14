@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useInvoices } from "../../hooks/useInvoices";
 import { useToast } from "../../components/common/Toast";
@@ -24,10 +24,10 @@ function exportCSV(invoices) {
     inv.docType || "",
     inv.invoiceDate || "",
     (inv.items || []).length,
-    Number(inv.subtotal || 0).toFixed(2),
-    Number(inv.discount || 0).toFixed(2),
-    Number(inv.tax || 0).toFixed(2),
-    Number(inv.total || 0).toFixed(2),
+    (inv.subtotal || 0).toFixed(2),
+    (inv.discount || 0).toFixed(2),
+    (inv.tax || 0).toFixed(2),
+    (inv.total || 0).toFixed(2),
   ]);
 
   const csv = [headers, ...rows].map((row) => row.join(",")).join("\n");
@@ -40,26 +40,8 @@ function exportCSV(invoices) {
   a.href = url;
   a.download = `invoices_${new Date().toISOString().slice(0, 10)}.csv`;
   a.click();
+
   URL.revokeObjectURL(url);
-}
-
-function getInvoiceId(inv) {
-  return inv?.id || inv?.docId || inv?._id || "";
-}
-
-function getClientName(inv) {
-  return inv?.clientName || inv?.client?.name || "";
-}
-
-function getClientCompany(inv) {
-  return inv?.client?.company || "";
-}
-
-function money(value) {
-  return Number(value || 0).toLocaleString("en-IN", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
 }
 
 export default function AdminInvoices() {
@@ -68,73 +50,24 @@ export default function AdminInvoices() {
   const toast = useToast();
 
   const [search, setSearch] = useState("");
-  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [delId, setDelId] = useState(null);
 
-  const filtered = useMemo(() => {
-    const query = search.trim().toLowerCase();
+  const filtered = invoices.filter(
+    (inv) =>
+      (inv.invoiceNo || "").toLowerCase().includes(search.toLowerCase()) ||
+      (inv.clientName || inv.client?.name || "")
+        .toLowerCase()
+        .includes(search.toLowerCase()) ||
+      (inv.docType || "").toLowerCase().includes(search.toLowerCase())
+  );
 
-    if (!query) return invoices;
-
-    return invoices.filter((inv) => {
-      const values = [
-        inv.invoiceNo,
-        getClientName(inv),
-        getClientCompany(inv),
-        inv.docType,
-        inv.invoiceDate,
-        inv.total,
-      ];
-
-      return values
-        .map((value) => String(value || "").toLowerCase())
-        .some((value) => value.includes(query));
-    });
-  }, [invoices, search]);
-
-  const typeColor = (type) => {
-    const colors = {
+  const typeColor = (type) =>
+    ({
       Invoice: { bg: "#eff6ff", color: "#1d4ed8" },
       Estimate: { bg: "#fefce8", color: "#92400e" },
       "Proforma Invoice": { bg: "#f0fdf4", color: "#166534" },
       Quotation: { bg: "#faf5ff", color: "#7e22ce" },
-    };
-
-    return colors[type] || { bg: "#f1f5f9", color: "#475569" };
-  };
-
-  const handleEdit = (invoice) => {
-    const invoiceId = getInvoiceId(invoice);
-
-    if (!invoiceId) {
-      alert("This invoice is missing its document ID, so it cannot be edited.");
-      return;
-    }
-
-    sessionStorage.setItem("manakamana_edit_invoice", JSON.stringify(invoice));
-
-    navigate(`/admin/invoice/${invoiceId}`, {
-      state: { invoice },
-    });
-  };
-
-  const handleDelete = async () => {
-    if (!deleteTarget) return;
-
-    const invoiceId = getInvoiceId(deleteTarget);
-
-    if (!invoiceId) {
-      alert("This invoice is missing its document ID, so it cannot be deleted.");
-      setDeleteTarget(null);
-      return;
-    }
-
-    await deleteInvoice(invoiceId);
-    setDeleteTarget(null);
-
-    if (toast?.success) {
-      toast.success("Invoice deleted successfully");
-    }
-  };
+    }[type] || { bg: "#f1f5f9", color: "#475569" });
 
   return (
     <div style={s.page}>
@@ -151,10 +84,7 @@ export default function AdminInvoices() {
                 style={s.exportBtn}
                 onClick={() => {
                   exportCSV(invoices);
-
-                  if (toast?.success) {
-                    toast.success(`Exported ${invoices.length} invoices to CSV`);
-                  }
+                  toast.success(`Exported ${invoices.length} invoices to CSV`);
                 }}
               >
                 📥 Export CSV
@@ -181,8 +111,8 @@ export default function AdminInvoices() {
           <div style={s.empty}>
             <p style={{ fontSize: 40 }}>🧾</p>
             <p>
-              No invoices found.{" "}
-              <Link to="/admin/invoice/new" style={s.emptyLink}>
+              No invoices yet.{" "}
+              <Link to="/admin/invoice/new" style={{ color: "#ea580c", fontWeight: 600 }}>
                 Create your first one →
               </Link>
             </p>
@@ -204,22 +134,24 @@ export default function AdminInvoices() {
 
               <tbody>
                 {filtered.map((inv, index) => {
-                  const invoiceId = getInvoiceId(inv);
-                  const clientName = getClientName(inv) || "—";
-                  const clientCompany = getClientCompany(inv);
                   const color = typeColor(inv.docType);
+                  const clientName = inv.clientName || inv.client?.name || "—";
 
                   return (
-                    <tr key={invoiceId || inv.invoiceNo || index} style={index % 2 === 0 ? s.trEven : s.trOdd}>
+                    <tr key={inv.id} style={index % 2 === 0 ? s.trEven : s.trOdd}>
                       <td style={s.td}>
                         <span style={s.invNo}>{inv.invoiceNo || "—"}</span>
                       </td>
 
                       <td style={s.td}>
-                        <div style={s.clientName}>{clientName}</div>
+                        <div style={{ fontWeight: 600, color: "#0f172a" }}>
+                          {clientName}
+                        </div>
 
-                        {clientCompany && (
-                          <div style={s.clientCompany}>{clientCompany}</div>
+                        {inv.client?.company && (
+                          <div style={{ fontSize: 11, color: "#94a3b8" }}>
+                            {inv.client.company}
+                          </div>
                         )}
                       </td>
 
@@ -233,19 +165,29 @@ export default function AdminInvoices() {
 
                       <td style={s.td}>{(inv.items || []).length} items</td>
 
-                      <td style={s.totalCell}>Rs{money(inv.total)}</td>
+                      <td style={{ ...s.td, fontWeight: 700, color: "#ea580c" }}>
+                        Rs{(inv.total || 0).toLocaleString("en-IN", {
+                          minimumFractionDigits: 2,
+                        })}
+                      </td>
 
                       <td style={s.td}>
                         <div style={s.rowActs}>
-                          <button style={s.editBtn} onClick={() => handleEdit(inv)}>
-                            ✏️ Edit
+                          <button
+                            style={s.viewBtn}
+                            onClick={() => navigate(`/admin/invoice/view/${inv.id}`)}
+                          >
+                            👁 View / Print
                           </button>
 
                           <button
-                            style={s.delBtn}
-                            onClick={() => setDeleteTarget(inv)}
-                            title="Delete invoice"
+                            style={s.editBtn}
+                            onClick={() => navigate(`/admin/invoice/${inv.id}`)}
                           >
+                            ✏️ Edit
+                          </button>
+
+                          <button style={s.delBtn} onClick={() => setDelId(inv.id)}>
                             🗑
                           </button>
                         </div>
@@ -259,23 +201,25 @@ export default function AdminInvoices() {
         )}
       </div>
 
-      {deleteTarget && (
-        <div style={s.overlay} onClick={() => setDeleteTarget(null)}>
+      {delId && (
+        <div style={s.overlay} onClick={() => setDelId(null)}>
           <div style={s.modal} onClick={(event) => event.stopPropagation()}>
             <h2 style={s.modalTitle}>Delete Invoice?</h2>
+            <p style={s.modalText}>This action cannot be undone.</p>
 
-            <p style={s.modalText}>
-              This action cannot be undone.
-              <br />
-              Invoice: <strong>{deleteTarget.invoiceNo || "—"}</strong>
-            </p>
-
-            <div style={s.modalActions}>
-              <button style={s.cancelBtn} onClick={() => setDeleteTarget(null)}>
+            <div style={{ display: "flex", gap: 10 }}>
+              <button style={s.cancelBtn} onClick={() => setDelId(null)}>
                 Cancel
               </button>
 
-              <button style={s.confirmDelBtn} onClick={handleDelete}>
+              <button
+                style={s.confirmDelBtn}
+                onClick={async () => {
+                  await deleteInvoice(delId);
+                  setDelId(null);
+                  toast.success("Invoice deleted successfully");
+                }}
+              >
                 Delete
               </button>
             </div>
@@ -292,41 +236,35 @@ const s = {
     minHeight: "100vh",
     fontFamily: "'Inter','Segoe UI',system-ui,sans-serif",
   },
-
   inner: {
     maxWidth: 1200,
     margin: "0 auto",
     padding: "28px 24px",
   },
-
   header: {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "flex-start",
     marginBottom: 20,
-    gap: 16,
+    gap: 14,
     flexWrap: "wrap",
   },
-
   headerActions: {
     display: "flex",
     gap: 10,
     flexWrap: "wrap",
   },
-
   title: {
     fontSize: 26,
     fontWeight: 800,
     color: "#0f172a",
     margin: 0,
   },
-
   sub: {
     fontSize: 13,
     color: "#64748b",
     marginTop: 4,
   },
-
   newBtn: {
     background: "linear-gradient(135deg,#ea580c,#f97316)",
     color: "#fff",
@@ -337,7 +275,6 @@ const s = {
     textDecoration: "none",
     boxShadow: "0 2px 8px rgba(234,88,12,0.25)",
   },
-
   exportBtn: {
     background: "#fff",
     color: "#334155",
@@ -348,7 +285,6 @@ const s = {
     border: "1.5px solid #e2e8f0",
     cursor: "pointer",
   },
-
   search: {
     width: "100%",
     maxWidth: 440,
@@ -360,23 +296,19 @@ const s = {
     outline: "none",
     boxSizing: "border-box",
   },
-
   tableWrap: {
     background: "#fff",
     borderRadius: 14,
     overflow: "hidden",
     boxShadow: "0 1px 4px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.04)",
   },
-
   table: {
     width: "100%",
     borderCollapse: "collapse",
   },
-
   thead: {
     background: "#fafaf9",
   },
-
   th: {
     padding: "11px 14px",
     fontSize: 11,
@@ -387,63 +319,46 @@ const s = {
     borderBottom: "1px solid #e2e8f0",
     textAlign: "left",
   },
-
   td: {
     padding: "13px 14px",
     fontSize: 13,
     borderBottom: "1px solid #f1f5f9",
     verticalAlign: "middle",
   },
-
   trEven: {
     background: "#fff",
   },
-
   trOdd: {
     background: "#fafaf9",
   },
-
   invNo: {
     fontWeight: 700,
     color: "#334155",
     fontFamily: "monospace",
     fontSize: 13,
   },
-
-  clientName: {
-    fontWeight: 600,
-    color: "#0f172a",
-  },
-
-  clientCompany: {
-    fontSize: 11,
-    color: "#94a3b8",
-    marginTop: 2,
-  },
-
   badge: {
     padding: "3px 10px",
     borderRadius: 20,
     fontSize: 11,
     fontWeight: 700,
-    display: "inline-block",
   },
-
-  totalCell: {
-    padding: "13px 14px",
-    fontSize: 13,
-    borderBottom: "1px solid #f1f5f9",
-    verticalAlign: "middle",
-    fontWeight: 700,
-    color: "#ea580c",
-  },
-
   rowActs: {
     display: "flex",
     gap: 6,
     justifyContent: "flex-end",
+    flexWrap: "wrap",
   },
-
+  viewBtn: {
+    background: "#ecfeff",
+    color: "#0e7490",
+    border: "1px solid #a5f3fc",
+    borderRadius: 6,
+    padding: "6px 12px",
+    fontSize: 12,
+    fontWeight: 700,
+    cursor: "pointer",
+  },
   editBtn: {
     background: "#fff7ed",
     color: "#ea580c",
@@ -454,7 +369,6 @@ const s = {
     fontWeight: 600,
     cursor: "pointer",
   },
-
   delBtn: {
     background: "#fee2e2",
     color: "#dc2626",
@@ -464,13 +378,11 @@ const s = {
     fontSize: 12,
     cursor: "pointer",
   },
-
   loading: {
     textAlign: "center",
     padding: 60,
     color: "#64748b",
   },
-
   empty: {
     textAlign: "center",
     padding: 60,
@@ -478,12 +390,6 @@ const s = {
     fontSize: 15,
     lineHeight: 2,
   },
-
-  emptyLink: {
-    color: "#ea580c",
-    fontWeight: 600,
-  },
-
   overlay: {
     position: "fixed",
     inset: 0,
@@ -495,16 +401,14 @@ const s = {
     padding: 16,
     backdropFilter: "blur(4px)",
   },
-
   modal: {
     background: "#fff",
     borderRadius: 16,
-    padding: 28,
+    padding: "28px",
     maxWidth: 360,
     width: "100%",
     boxShadow: "0 16px 50px rgba(0,0,0,0.18)",
   },
-
   modalTitle: {
     fontSize: 18,
     fontWeight: 800,
@@ -512,22 +416,14 @@ const s = {
     marginTop: 0,
     marginBottom: 12,
   },
-
   modalText: {
     color: "#64748b",
     marginBottom: 24,
     fontSize: 14,
-    lineHeight: 1.6,
   },
-
-  modalActions: {
-    display: "flex",
-    gap: 10,
-  },
-
   cancelBtn: {
     flex: 1,
-    padding: 10,
+    padding: "10px",
     background: "#f1f5f9",
     color: "#334155",
     border: "none",
@@ -535,10 +431,9 @@ const s = {
     fontWeight: 600,
     cursor: "pointer",
   },
-
   confirmDelBtn: {
     flex: 1,
-    padding: 10,
+    padding: "10px",
     background: "#ef4444",
     color: "#fff",
     border: "none",

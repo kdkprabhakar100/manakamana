@@ -1,29 +1,143 @@
 import { useState, useEffect, useRef } from "react";
 import {
-  collection, onSnapshot, addDoc, updateDoc,
-  deleteDoc, doc, serverTimestamp, query, where, getDocs,
+  collection,
+  onSnapshot,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  doc,
+  serverTimestamp,
 } from "firebase/firestore";
 import { db } from "../firebase/config";
 
-const COL    = "customers";
+const COL = "customers";
 const LS_KEY = "manakamana_customers";
 
 function getLocal() {
-  try { return JSON.parse(localStorage.getItem(LS_KEY) || "[]"); }
-  catch { return []; }
+  try {
+    return JSON.parse(localStorage.getItem(LS_KEY) || "[]");
+  } catch {
+    return [];
+  }
 }
+
 function saveLocal(list) {
   localStorage.setItem(LS_KEY, JSON.stringify(list));
 }
+
 function firebaseReady() {
-  try { return !db.app.options.projectId.includes("YOUR_PROJECT_ID"); }
-  catch { return false; }
+  try {
+    return !db.app.options.projectId.includes("YOUR_PROJECT_ID");
+  } catch {
+    return false;
+  }
+}
+
+function cleanCustomer(data = {}) {
+  return {
+    name: (data.name || "").trim(),
+    company: (data.company || "").trim(),
+    phone: (data.phone || "").trim(),
+    address: (data.address || "").trim(),
+    gstin: (data.gstin || "").trim(),
+    email: (data.email || "").trim(),
+    notes: (data.notes || "").trim(),
+    payment: (data.payment || "").trim(),
+  };
+}
+
+function normalizeName(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ");
+}
+
+function normalizePhone(value) {
+  return String(value || "").replace(/\D/g, "");
+}
+
+function normalizePan(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
+}
+
+function findCustomerMatch(customers, clientData) {
+  const clean = cleanCustomer(clientData);
+
+  const clientPan = normalizePan(clean.gstin);
+  const clientPhone = normalizePhone(clean.phone);
+  const clientName = normalizeName(clean.name);
+
+  // If someone accidentally types phone/PAN in the name box,
+  // this still helps match an old customer.
+  const nameAsPhone = normalizePhone(clean.name);
+  const nameAsPan = normalizePan(clean.name);
+
+  if (clientPan) {
+    const byPan = customers.find(
+      (customer) => normalizePan(customer.gstin) === clientPan
+    );
+
+    if (byPan) return byPan;
+  }
+
+  if (clientPhone) {
+    const byPhone = customers.find(
+      (customer) => normalizePhone(customer.phone) === clientPhone
+    );
+
+    if (byPhone) return byPhone;
+  }
+
+  if (nameAsPhone) {
+    const byNamePhone = customers.find(
+      (customer) => normalizePhone(customer.phone) === nameAsPhone
+    );
+
+    if (byNamePhone) return byNamePhone;
+  }
+
+  if (nameAsPan) {
+    const byNamePan = customers.find(
+      (customer) => normalizePan(customer.gstin) === nameAsPan
+    );
+
+    if (byNamePan) return byNamePan;
+  }
+
+  if (clientName) {
+    const byName = customers.find(
+      (customer) => normalizeName(customer.name) === clientName
+    );
+
+    if (byName) return byName;
+  }
+
+  return null;
+}
+
+function mergeCustomer(existing, incoming) {
+  const clean = cleanCustomer(incoming);
+
+  return {
+    name: existing.name || clean.name,
+    company: existing.company || clean.company,
+    phone: existing.phone || clean.phone,
+    address: existing.address || clean.address,
+    gstin: existing.gstin || clean.gstin,
+    email: existing.email || clean.email,
+    notes: existing.notes || clean.notes || "",
+    payment: existing.payment || clean.payment || "",
+  };
 }
 
 export function useCustomers() {
   const [customers, setCustomers] = useState([]);
-  const [loading,   setLoading]   = useState(true);
-  const [useLocal,  setUseLocal]  = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [useLocal, setUseLocal] = useState(false);
   const unsubRef = useRef(null);
 
   useEffect(() => {
@@ -35,7 +149,11 @@ export function useCustomers() {
     }
 
     const timeout = setTimeout(() => {
-      if (unsubRef.current) { unsubRef.current(); unsubRef.current = null; }
+      if (unsubRef.current) {
+        unsubRef.current();
+        unsubRef.current = null;
+      }
+
       setCustomers(getLocal());
       setUseLocal(true);
       setLoading(false);
@@ -46,20 +164,23 @@ export function useCustomers() {
         collection(db, COL),
         (snap) => {
           clearTimeout(timeout);
+
           const list = snap.docs
-            .map(d => ({ id: d.id, ...d.data() }))
+            .map((item) => ({ id: item.id, ...item.data() }))
             .sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+
           setCustomers(list);
           setUseLocal(false);
           setLoading(false);
         },
-        (err) => {
+        () => {
           clearTimeout(timeout);
           setCustomers(getLocal());
           setUseLocal(true);
           setLoading(false);
         }
       );
+
       unsubRef.current = unsub;
     } catch {
       clearTimeout(timeout);
@@ -74,83 +195,110 @@ export function useCustomers() {
     };
   }, []);
 
-  /* ── CRUD ── */
   const addCustomer = async (data) => {
-    const clean = {
-      name:    (data.name    || "").trim(),
-      company: (data.company || "").trim(),
-      phone:   (data.phone   || "").trim(),
-      address: (data.address || "").trim(),
-      gstin:   (data.gstin   || "").trim(),
-      email:   (data.email   || "").trim(),
-      notes:   (data.notes   || "").trim(),
-    };
+    const clean = cleanCustomer(data);
+
+    if (!clean.name) {
+      throw new Error("Customer name is required.");
+    }
+
     if (useLocal) {
-      const item = { ...clean, id: Date.now().toString(), createdAt: new Date().toISOString() };
-      const updated = [...getLocal(), item].sort((a,b) => a.name.localeCompare(b.name));
+      const item = {
+        ...clean,
+        id: Date.now().toString(),
+        createdAt: new Date().toISOString(),
+      };
+
+      const updated = [...getLocal(), item].sort((a, b) =>
+        a.name.localeCompare(b.name)
+      );
+
       saveLocal(updated);
       setCustomers(updated);
+
       return item;
     }
-    return addDoc(collection(db, COL), { ...clean, createdAt: serverTimestamp() });
+
+    return addDoc(collection(db, COL), {
+      ...clean,
+      createdAt: serverTimestamp(),
+    });
   };
 
   const updateCustomer = async (id, data) => {
-    const clean = {
-      name:    (data.name    || "").trim(),
-      company: (data.company || "").trim(),
-      phone:   (data.phone   || "").trim(),
-      address: (data.address || "").trim(),
-      gstin:   (data.gstin   || "").trim(),
-      email:   (data.email   || "").trim(),
-      notes:   (data.notes   || "").trim(),
-    };
+    const clean = cleanCustomer(data);
+
+    if (!clean.name) {
+      throw new Error("Customer name is required.");
+    }
+
     if (useLocal) {
-      const updated = getLocal().map(c => c.id === id ? { ...c, ...clean } : c)
-        .sort((a,b) => a.name.localeCompare(b.name));
+      const updated = getLocal()
+        .map((customer) =>
+          customer.id === id ? { ...customer, ...clean } : customer
+        )
+        .sort((a, b) => a.name.localeCompare(b.name));
+
       saveLocal(updated);
       setCustomers(updated);
+
       return;
     }
-    return updateDoc(doc(db, COL, id), { ...clean, updatedAt: serverTimestamp() });
+
+    return updateDoc(doc(db, COL, id), {
+      ...clean,
+      updatedAt: serverTimestamp(),
+    });
   };
 
   const deleteCustomer = async (id) => {
     if (useLocal) {
-      const updated = getLocal().filter(c => c.id !== id);
+      const updated = getLocal().filter((customer) => customer.id !== id);
+
       saveLocal(updated);
       setCustomers(updated);
+
       return;
     }
+
     return deleteDoc(doc(db, COL, id));
   };
 
   /**
    * upsertFromInvoice — called when an invoice is saved.
-   * If a customer with the same name already exists → update their info (only fill blanks).
-   * If no match → create a new customer record.
+   *
+   * Match priority:
+   * 1. VAT/PAN
+   * 2. Phone number
+   * 3. Phone/PAN typed inside name field
+   * 4. Customer name
+   *
+   * If matched, it fills missing customer details without overwriting old data.
+   * If no match, it creates a new customer record.
    */
   const upsertFromInvoice = async (clientData) => {
-    if (!clientData?.name?.trim()) return;
-    const nameLower = clientData.name.trim().toLowerCase();
+    const clean = cleanCustomer(clientData);
 
-    const existing = customers.find(c => c.name.toLowerCase() === nameLower);
+    if (!clean.name) return;
+
+    const existing = findCustomerMatch(customers, clean);
+
     if (existing) {
-      // Only fill in blanks — don't overwrite existing data
-      const merged = {
-        name:    existing.name,
-        company: existing.company || clientData.company || "",
-        phone:   existing.phone   || clientData.phone   || "",
-        address: existing.address || clientData.address || "",
-        gstin:   existing.gstin   || clientData.gstin   || "",
-        email:   existing.email   || clientData.email   || "",
-        notes:   existing.notes   || "",
-      };
+      const merged = mergeCustomer(existing, clean);
       await updateCustomer(existing.id, merged);
-    } else {
-      await addCustomer(clientData);
+      return;
     }
+
+    await addCustomer(clean);
   };
 
-  return { customers, loading, useLocal, addCustomer, updateCustomer, deleteCustomer, upsertFromInvoice };
+  return {
+    customers,
+    loading,
+    useLocal,
+    addCustomer,
+    updateCustomer,
+    deleteCustomer,
+    upsertFromInvoice,
+  };
 }
