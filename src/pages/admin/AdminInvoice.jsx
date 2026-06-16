@@ -312,10 +312,56 @@ const [showClientDrop, setShowClientDrop] = useState(false);
   // }, [id, invoices]);
 
   useEffect(() => {
-    if (!id || id =="new"){
-      setInvoiceNo(generateInvoiceNo(invoices));
+    if (!id || id === "new") {
+      if (!invoiceNo) {
+        setInvoiceNo(generateInvoiceNo(invoices));
+      }
+      return;
     }
-  }, [invoices, id]);
+
+    let invoiceFromSession = null;
+
+    try {
+      const sessionInvoice = sessionStorage.getItem("manakamana_edit_invoice");
+      invoiceFromSession = sessionInvoice ? JSON.parse(sessionInvoice) : null;
+    } catch {
+      invoiceFromSession = null;
+    }
+
+    const existing =
+      invoices.find((inv) => inv.id === id) ||
+      (invoiceFromSession && invoiceFromSession.id === id ? invoiceFromSession : null);
+
+    if (!existing) return;
+
+    setInvoiceNo(existing.invoiceNo || "");
+    setInvoiceDate(existing.invoiceDate || today());
+    setDueDate(existing.dueDate || "");
+    setDocType(existing.docType || "Invoice");
+    setCompany(existing.company || DEFAULT_COMPANY);
+
+    const loadedClient = {
+      ...EMPTY_CLIENT,
+      ...(existing.client || {}),
+      name: existing.client?.name || existing.clientName || "",
+      company: existing.client?.company || "",
+      address: existing.client?.address || "",
+      phone: existing.client?.phone || "",
+      gstin: existing.client?.gstin || "",
+      payment: existing.client?.payment || "Cash/Credit",
+    };
+
+    setClient(loadedClient);
+    setClientSearch(loadedClient.name);
+    setItems(existing.items || []);
+    setDiscountPct(existing.discountPct || 0);
+    setTaxEnabled(existing.taxEnabled ?? true);
+    setNotes(existing.notes || "");
+    setTerms(
+      existing.terms ||
+        "Payment due within 30 days.\nGoods once sold will not be taken back."
+    );
+  }, [id, invoices]);
 
   /* ── Calculations ── */
   const subtotal = items.reduce((s, i) => s + i.qty * i.rate, 0);
